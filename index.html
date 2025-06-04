@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>H&W Process App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+
+    <style>
+        /* --- Global Styles --- */
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-nav {
+            overflow: hidden;
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 15px;
+        }
+
+        .tab-nav button {
+            background-color: black;
+            /* Tab background color */
+            color: white;
+            /* Tab text color */
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            font-size: 17px;
+            border-right: 1px solid #444;
+            /* Separator */
+        }
+
+        .tab-nav button:last-child {
+            border-right: none;
+        }
+
+        .tab-nav button:hover {
+            background-color: #333;
+            /* Darker hover */
+        }
+
+        .tab-nav button.active {
+            background-color: #007bff;
+            /* Active tab different color */
+            color: white;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 10px 0;
+            border-top: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #777;
+            padding-bottom: 5px;
+        }
+
+        h3 {
+            margin-top: 20px;
+        }
+
+        h4 {
+            margin-top: 15px;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            font-weight: bold;
+        }
+
+        td:hover {
+            white-space: normal;
+            overflow: visible;
+        }
+
+        #importTab .table-container table {
+            width: auto;
+            table-layout: auto;
+            margin-left: 0;
+            margin-right: auto;
+        }
+
+        #importTab .table-container th,
+        #importTab .table-container td {
+            max-width: 250px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #importTab .table-container td:hover {
+            white-space: normal;
+            overflow: visible;
+            max-width: none;
+        }
+
+        #processDataTab .table-container table {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        #processDataTab th.col-row,
+        #processDataTab td.col-row {
+            display: none;
+        }
+
+        #processDataTab th.col-period,
+        #processDataTab td.col-period,
+        #processDataTab th.col-unique-ref,
+        #processDataTab td.col-unique-ref,
+        #processDataTab th.col-gdc,
+        #processDataTab td.col-gdc,
+        #processDataTab th.col-tax-type,
+        #processDataTab td.col-tax-type,
+        #processDataTab th.col-account,
+        #processDataTab td.col-account {
+            text-align: center;
+            width: 80px;
+        }
+
+        #processDataTab th.col-description,
+        #processDataTab td.col-description {
+            width: 25%;
+            min-width: 150px;
+            text-align: left;
+        }
+
+        #processDataTab th.col-amount,
+        #processDataTab td.col-amount,
+        #processDataTab th.col-vat-amount,
+        #processDataTab td.col-vat-amount {
+            text-align: right;
+            width: 100px;
+        }
+
+        #processDataTab th.col-pastel-export,
+        #processDataTab td.col-pastel-export {
+            text-align: left;
+            width: 30%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 2px;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        input[type="file"],
+        input[type="text"],
+        select {
+            padding: 8px;
+            margin: 5px 0 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .instructions {
+            background-color: #eef;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .labelClass {
+            display: inline-block;
+            width: 300px;
+            margin-bottom: 5px;
+            font-size: 15px;
+        }
+
+        .table-container {
+            max-height: 500px;
+            overflow: auto;
+            margin-bottom: 15px;
+        }
+
+        #mappingRuleFormContainer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        #mappingRuleFormContainer legend {
+            padding: 0 10px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 180px;
+            flex-grow: 1;
+            margin-bottom: 5px;
+        }
+
+        .form-group label {
+            margin-bottom: 3px;
+            font-size: 0.9em;
+        }
+
+        .form-group input[type="text"] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            margin: 0;
+        }
+
+        .form-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            justify-content: flex-start;
+            padding-top: 10px;
+        }
+
+        .button-like-label {
+            cursor: pointer;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 5px 2px;
+            font-family: 'Roboto', sans-serif;
+            font-size: inherit;
+            line-height: normal;
+            text-align: center;
+        }
+
+        .button-like-label:hover {
+            background-color: #5a6268;
+        }
+
+        .data-management-section div {
+            margin-bottom: 15px;
+        }
+
+        .data-management-section {
+            /* Add some top margin if it feels too close to HR */
+            margin-top: 20px;
+        }
+
+
+        .settings-for-processing {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-end;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #eee;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .settings-for-processing div {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-for-processing label {
+            font-size: 0.9em;
+            margin-bottom: 3px;
+        }
+
+        .settings-for-processing select,
+        .settings-for-processing input[type="text"] {
+            margin-top: 0;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .settings-for-processing input#vatRateInput {
+            width: 80px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>H&W Data Processing Tool</h1>
+        <div class="tab-nav">
+            <button class="tab-button active" onclick="openTab(event, 'importTab')">(Step 1) Import File</button>
+            <button class="tab-button" onclick="openTab(event, 'mappingRulesTab')">(Step 2) Mapping Rules</button>
+            <button class="tab-button" onclick="openTab(event, 'processDataTab')">(Step 3) Process Data</button>
+            <!-- <button class="tab-button" onclick="openTab(event, 'settingsExportTab')">(Step 4) Settings & Export</button>-->
+        </div>
+
+        <div id="importTab" class="tab-content active">
+            <h2>(Step 1) - Import File</h2>
+            <div class="instructions">
+                <p>Select Excel (.xlsx, .xls, .csv). First sheet's first row becomes headers.</p>
+            </div>
+            <input type="file" id="fileInput" accept=".xlsx, .xls, .csv">
+            <button id="importButton">Import File</button>
+            <p id="importStatus"></p>
+            <h3>Imported Data:</h3>
+            <div class="table-container">
+                <table id="importedDataTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="mappingRulesTab" class="tab-content">
+            <h2>(Step 2) - Manage Mapping Rules</h2>
+            <div class="instructions">
+                <p>Define rules to transform descriptions and assign G/D/C, Account, Tax Type.</p>
+                <p>The "New Tax Type" you define here will be used to calculate VAT in Step 3.</p>
+            </div>
+            <fieldset id="mappingRuleFormContainer">
+                <legend>Add/Edit Mapping Rule</legend>
+                <input type="hidden" id="mappingRuleId">
+                <div class="form-group"><label for="searchText">Search Text:</label><input type="text" id="searchText"
+                        placeholder="e.g., 'Bank Charges'"></div>
+                <div class="form-group"><label for="newDescription">New Description:</label><input type="text"
+                        id="newDescription" placeholder="e.g., 'Monthly Bank Fees'"></div>
+                <div class="form-group"><label for="newGDC">New G/D/C:</label><input type="text" id="newGDC"
+                        placeholder="e.g., 'D'"></div>
+                <div class="form-group"><label for="newAccount">New Account:</label><input type="text" id="newAccount"
+                        placeholder="e.g., '6400/001'"></div>
+                <div class="form-group"><label for="newTaxType">New Tax Type:</label><input type="text" id="newTaxType"
+                        placeholder="e.g., '0' or '1'"></div>
+                <div class="form-actions"><button id="saveMappingRuleButton">Save Rule</button><button
+                        id="clearMappingFormButton" type="button">Clear Form</button></div>
+            </fieldset>
+            <h3>Current Mapping Rules:</h3>
+            <div class="table-container">
+                <table id="mappingRulesTable">
+                    <thead>
+                        <tr>
+                            <th>Search Text</th>
+                            <th>New Description</th>
+                            <th>New G/D/C</th>
+                            <th>New Account</th>
+                            <th>New Tax Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <!-- MOVED Mapping Rules JSON Management HERE -->
+            <div style="margin-top: 25px;">
+                <h4>Manage Mapping Rules (JSON File):</h4>
+                <button id="saveMappingRulesJsonButton">Save Mapping Rules (JSON)</button>
+                <label for="loadMappingRulesJsonInput" class="button-like-label">Load Mapping Rules (JSON)</label>
+                <input type="file" id="loadMappingRulesJsonInput" accept=".json" style="display:none;">
+            </div>
+        </div>
+
+        <div id="processDataTab" class="tab-content">
+            <h2>(Step 3) - Process Data & View Results</h2>
+            <div class="settings-for-processing">
+                <div><label for="yearEndForPeriodCalc">Year-End (for Period Calc):</label><select
+                        id="yearEndForPeriodCalc">
+                        <option value="1">January</option>
+                        <option value="2" selected>February</option>
+                        <option value="3">March</option>
+                        <option value="4">April</option>
+                        <option value="5">May</option>
+                        <option value="6">June</option>
+                        <option value="7">July</option>
+                        <option value="8">August</option>
+                        <option value="9">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select></div>
+                <div><label for="cashbookAccountForProcessing">Cashbook Account (for export string):</label><input
+                        type="text" id="cashbookAccountForProcessing" maxlength="7" placeholder="e.g., 8400000"></div>
+                <div><label for="vatRateInput">VAT Rate:</label><input type="text" id="vatRateInput" value="15%"></div>
+                <button id="applyProcessingSettingsButton">Apply & Recalculate</button>
+            </div>
+            <hr style="margin: 15px 0;">
+            <div class="instructions">
+                <p>Click "Map Line Items" to apply rules from Step 2 (including "New Tax Type"). "Undo" reverts
+                    mapping.<br>
+                    "Period", "Unique Ref", and "VAT Amount" columns update based on Year-End, Date, data, and VAT
+                    Rate.<br>
+                    Click "Apply & Recalculate" after changing settings or VAT Rate.</p>
+            </div>
+            <button id="mapLineItemsButton">Map Line Items</button>
+            <button id="undoMappingButton">Undo Last Mapping</button>
+            <p id="mappingStatus"></p>
+            <h3>Processed Data:</h3>
+            <div class="table-container">
+                <table id="processedDataTable">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <!-- MOVED Batch Buttons HERE -->
+            <div>
+                <h4 style="margin-top: 25px;">Create Batch Files:</h4>
+                <p class="instructions">Uses the data and settings currently displayed above in the "Processed Data"
+                    table.</p>
+                <button id="createPaymentsBatchBottomButton">Create Payments Batch</button>
+                <button id="createReceiptsBatchBottomButton">Create Receipts Batch</button>
+            </div>
+        </div>
+
+        <div id="settingsExportTab" class="tab-content">
+            <h2>(Step 4) - Settings & Batch Export</h2>
+            <div class="instructions">
+                <p>Configure global year-end and Cashbook account for general reference and default batch naming.</p>
+            </div>
+            <div><label class="labelClass" for="yearEndMonth">Global Year-End of Company:</label><select
+                    id="yearEndMonth">
+                    <option value="January">January</option>
+                    <option value="February" selected>February</option>
+                    <option value="March">March</option>
+                    <option value="April">April</option>
+                    <option value="May">May</option>
+                    <option value="June">June</option>
+                    <option value="July">July</option>
+                    <option value="August">August</option>
+                    <option value="September">September</option>
+                    <option value="October">October</option>
+                    <option value="November">November</option>
+                    <option value="December">December</option>
+                </select></div>
+            <div><label class="labelClass" for="cashbookAccount">Global Cashbook Account (7 chars):</label><input
+                    type="text" id="cashbookAccount" maxlength="7" placeholder="e.g., 8400000"></div>
+            <button id="saveSettingsButton">Save Global Settings</button>
+            <p id="settingsStatus"></p>
+            <hr>
+            <h3>Create Batch Files (using Step 3 settings):</h3>
+            <p class="instructions">Batch files use the G/D/C, Account, Tax Type, etc. from the Processed Data table
+                (Step 3). Ensure mappings and VAT calculations are as desired before creating batches from there.</p>
+            <button id="createPaymentsBatchButton">Create Payments Batch (from Step 3 Data)</button>
+            <button id="createReceiptsBatchButton">Create Receipts Batch (from Step 3 Data)</button>
+        </div>
+
+        <hr>
+        <div class="data-management-section">
+            <h3>Data Management (Browser Storage)</h3>
+            <!-- Full Application State Section Removed -->
+            <!-- Mapping Rules Only Section Moved to Step 2 Tab -->
+            <!-- Batch File Creation (Convenience) Section Moved to Step 3 Tab -->
+            <div>
+                <h4>Clear Storage:</h4><button id="clearAllDataButton" style="background-color: #dc3545;">Clear All App
+                    Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rawImportedData = [], currentHeaders = [], processedData = [], processedDataBackup = [], mappingRules = [];
+        let appSettings = { yearEnd: 'February', cashbookAccount: '', vatRate: '15%' };
+
+        const importButton = document.getElementById('importButton');
+        const fileInput = document.getElementById('fileInput');
+        const importedDataTableBody = document.getElementById('importedDataTable').getElementsByTagName('tbody')[0];
+        const importedDataTableHead = document.getElementById('importedDataTable').getElementsByTagName('thead')[0];
+        const importStatus = document.getElementById('importStatus');
+        const mappingRuleIdInput = document.getElementById('mappingRuleId');
+        const searchTextInput = document.getElementById('searchText');
+        const newDescriptionInput = document.getElementById('newDescription');
+        const newGDCInput = document.getElementById('newGDC');
+        const newAccountInput = document.getElementById('newAccount');
+        const newTaxTypeInput = document.getElementById('newTaxType');
+        const saveMappingRuleButton = document.getElementById('saveMappingRuleButton');
+        const clearMappingFormButton = document.getElementById('clearMappingFormButton');
+        const mappingRulesTableBody = document.getElementById('mappingRulesTable').getElementsByTagName('tbody')[0];
+        const mapLineItemsButton = document.getElementById('mapLineItemsButton');
+        const undoMappingButton = document.getElementById('undoMappingButton');
+        const mappingStatus = document.getElementById('mappingStatus');
+        const processedDataTableBody = document.getElementById('processedDataTable').getElementsByTagName('tbody')[0];
+        const processedDataTableHead = document.getElementById('processedDataTable').getElementsByTagName('thead')[0];
+        const yearEndMonthSelect = document.getElementById('yearEndMonth');
+        const cashbookAccountInput = document.getElementById('cashbookAccount');
+        const saveSettingsButton = document.getElementById('saveSettingsButton');
+        const settingsStatus = document.getElementById('settingsStatus');
+
+        // Batch buttons in Step 4 tab
+        const createPaymentsBatchButton = document.getElementById('createPaymentsBatchButton');
+        const createReceiptsBatchButton = document.getElementById('createReceiptsBatchButton');
+
+        // Batch buttons moved to Step 3 tab (previously "bottom" buttons)
+        const createPaymentsBatchBottomButton = document.getElementById('createPaymentsBatchBottomButton');
+        const createReceiptsBatchBottomButton = document.getElementById('createReceiptsBatchBottomButton');
+
+        // Removed exportAllDataButton and importAllDataInput from const declarations
+        const clearAllDataButton = document.getElementById('clearAllDataButton');
+        const saveMappingRulesJsonButton = document.getElementById('saveMappingRulesJsonButton');
+        const loadMappingRulesJsonInput = document.getElementById('loadMappingRulesJsonInput');
+
+        const yearEndForPeriodCalcSelect = document.getElementById('yearEndForPeriodCalc');
+        const cashbookAccountForProcessingInput = document.getElementById('cashbookAccountForProcessing');
+        const vatRateInput = document.getElementById('vatRateInput');
+        const applyProcessingSettingsButton = document.getElementById('applyProcessingSettingsButton');
+
+        // --- Utility Functions ---
+        function displayDataInTable(tableBody, tableHead, data, headers)
+        {
+            tableHead.innerHTML = ''; tableBody.innerHTML = '';
+            if (!data || data.length === 0 || !headers || headers.length === 0)
+            {
+                const hr = tableHead.insertRow(); const hc = hr.insertCell();
+                hc.textContent = (headers && headers.length > 0) ? "No data" : "No data or headers.";
+                hc.colSpan = Math.max(1, (headers ? headers.length : 1));
+                const r = tableBody.insertRow(); const c = r.insertCell();
+                c.colSpan = Math.max(1, (headers ? headers.length : 1));
+                c.textContent = "No data to display."; return;
+            }
+            const headerRow = tableHead.insertRow();
+            headers.forEach(headerText =>
+            {
+                const th = document.createElement('th');
+                th.textContent = headerText;
+                const lowerHeaderText = String(headerText).toLowerCase().trim();
+                if (lowerHeaderText === 'row') th.classList.add('col-row');
+                else if (lowerHeaderText === 'period') th.classList.add('col-period');
+                else if (lowerHeaderText === 'unique ref') th.classList.add('col-unique-ref');
+                else if (lowerHeaderText === 'g/c/s' || (getGDCHeaderName() && lowerHeaderText === getGDCHeaderName().toLowerCase())) th.classList.add('col-gdc');
+                else if (lowerHeaderText.includes('description')) th.classList.add('col-description');
+                else if (lowerHeaderText === 'tax type') th.classList.add('col-tax-type');
+                else if (lowerHeaderText === 'vat amount') th.classList.add('col-vat-amount');
+                else if (getAmountHeaderName() && lowerHeaderText === getAmountHeaderName().toLowerCase()) th.classList.add('col-amount');
+                else if (getAccountHeaderNameOriginal() && lowerHeaderText === getAccountHeaderNameOriginal().toLowerCase()) th.classList.add('col-account');
+                else if (lowerHeaderText === 'account' && !getAccountHeaderNameOriginal()) th.classList.add('col-account');
+                else if (lowerHeaderText === '_pastelexportstring') th.classList.add('col-pastel-export');
+                headerRow.appendChild(th);
+            });
+
+            data.forEach(item =>
+            {
+                const row = tableBody.insertRow();
+                headers.forEach(headerKey => 
+                {
+                    const cell = row.insertCell();
+                    let cellValue = item[headerKey] === null || item[headerKey] === undefined ? '' : item[headerKey];
+
+                    const lowerHeaderKey = String(headerKey).toLowerCase().trim();
+                    if (lowerHeaderKey === 'row') cell.classList.add('col-row');
+                    else if (lowerHeaderKey === 'period') cell.classList.add('col-period');
+                    else if (lowerHeaderKey === 'unique ref') cell.classList.add('col-unique-ref');
+                    else if (lowerHeaderKey === 'g/c/s' || (getGDCHeaderName() && lowerHeaderKey === getGDCHeaderName().toLowerCase())) cell.classList.add('col-gdc');
+                    else if (lowerHeaderKey.includes('description')) cell.classList.add('col-description');
+                    else if (lowerHeaderKey === 'tax type') cell.classList.add('col-tax-type');
+                    else if (lowerHeaderKey === 'vat amount')
+                    {
+                        cell.classList.add('col-vat-amount');
+                        if (typeof cellValue === 'number') cellValue = cellValue.toFixed(2);
+                        else if (typeof cellValue === 'string' && !isNaN(parseFloat(cellValue)))
+                        {
+                            cellValue = parseFloat(cellValue).toFixed(2);
+                        }
+                    }
+                    else if (getAmountHeaderName() && lowerHeaderKey === getAmountHeaderName().toLowerCase())
+                    {
+                        cell.classList.add('col-amount');
+                        if (typeof cellValue === 'number') cellValue = cellValue.toFixed(2);
+                        else if (typeof cellValue === 'string' && !isNaN(parseFloat(cellValue)))
+                        {
+                            cellValue = parseFloat(cellValue).toFixed(2);
+                        }
+                    }
+                    else if (getAccountHeaderNameOriginal() && lowerHeaderKey === getAccountHeaderNameOriginal().toLowerCase()) cell.classList.add('col-account');
+                    else if (lowerHeaderKey === 'account' && !getAccountHeaderNameOriginal()) cell.classList.add('col-account');
+                    else if (lowerHeaderKey === '_pastelexportstring') cell.classList.add('col-pastel-export');
+
+                    cell.textContent = cellValue;
+                    if (headerKey === '_pastelExportString' || headerKey === 'Period' || headerKey === 'Unique Ref')
+                    {
+                        cell.title = cellValue;
+                    }
+                });
+            });
+        }
+
+        function downloadFile(content, filename, contentType = 'text/plain;charset=utf-8')
+        {
+            const link = document.createElement("a"); link.href = `data:${contentType},` + encodeURIComponent(content);
+            link.download = filename; link.style.display = "none"; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        function openTab(evt, tabName)
+        {
+            let i, tabcontent, tabbuttons;
+            tabcontent = document.getElementsByClassName("tab-content"); for (i = 0; i < tabcontent.length; i++) { tabcontent[i].style.display = "none"; tabcontent[i].classList.remove("active"); }
+            tabbuttons = document.getElementsByClassName("tab-button"); for (i = 0; i < tabbuttons.length; i++) { tabbuttons[i].classList.remove("active"); }
+            if (document.getElementById(tabName))
+            {
+                document.getElementById(tabName).style.display = "block";
+                document.getElementById(tabName).classList.add("active");
+            }
+            if (evt && evt.currentTarget)
+            {
+                evt.currentTarget.classList.add("active");
+            }
+        }
+
+        function isDateHeader(headerName)
+        {
+            if (!headerName || typeof headerName !== 'string') return false;
+            const lowerHeader = headerName.toLowerCase().trim();
+            const cleanHeader = lowerHeader.startsWith('\ufeff') ? lowerHeader.substring(1) : lowerHeader;
+            const dateKeywords = ['date', 'dt', 'day', 'datum', 'fecha', 'data', 'tarih', 'dated'];
+            return dateKeywords.some(keyword => cleanHeader.includes(keyword));
+        }
+
+        function getGDCHeaderName()
+        {
+            return currentHeaders.find(h =>
+            {
+                const cleanedH = String(h).toLowerCase().trim().replace(/\ufeff/g, '');
+                return cleanedH === 'g/c/s' || cleanedH.includes('gdc') || cleanedH.includes('type');
+            }) || null;
+        }
+
+        function getAmountHeaderName()
+        {
+            return currentHeaders.find(h =>
+            {
+                const cleanedH = String(h).toLowerCase().trim().replace(/\ufeff/g, '');
+                return cleanedH === 'amount' || cleanedH === 'value';
+            }) || null;
+        }
+        function getAccountHeaderNameOriginal()
+        {
+            return currentHeaders.find(h =>
+            {
+                const cleanedH = String(h).toLowerCase().trim().replace(/\ufeff/g, '');
+                return cleanedH.includes('account') || cleanedH.includes('a/c');
+            }) || null;
+        }
+
+
+        function formatDate_DDMMYYYY(dateValue)
+        {
+            if (!dateValue && dateValue !== 0) return "";
+
+            let year, month_0idx, day;
+
+            if (dateValue instanceof Date && !isNaN(dateValue.getTime()))
+            {
+                year = dateValue.getFullYear();
+                month_0idx = dateValue.getMonth();
+                day = dateValue.getDate();
+            } else if (typeof dateValue === 'number')
+            {
+                const excelBaseDate = new Date(Date.UTC(1899, 11, 30, 0, 0, 0));
+                const utcDate = new Date(excelBaseDate.getTime() + (dateValue - 1) * 24 * 60 * 60 * 1000);
+                year = utcDate.getUTCFullYear();
+                month_0idx = utcDate.getUTCMonth();
+                day = utcDate.getUTCDate();
+            } else if (typeof dateValue === 'string')
+            {
+                let parsedSuccessfully = false;
+                const trimmedDateValue = dateValue.trim();
+
+                let parts = trimmedDateValue.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+                if (parts)
+                {
+                    const p1 = parseInt(parts[1]);
+                    const p2 = parseInt(parts[2]);
+                    const p3 = parseInt(parts[3]);
+
+                    const tempYear = (p3 < 100) ? (p3 > 30 ? 1900 + p3 : 2000 + p3) : p3;
+
+                    if (p1 > 0 && p1 <= 31 && p2 > 0 && p2 <= 12)
+                    {
+                        day = p1;
+                        month_0idx = p2 - 1;
+                        year = tempYear;
+                        parsedSuccessfully = true;
+                    }
+                }
+
+                if (!parsedSuccessfully)
+                {
+                    parts = trimmedDateValue.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+                    if (parts)
+                    {
+                        const p1 = parseInt(parts[1]);
+                        const p2 = parseInt(parts[2]);
+                        const p3 = parseInt(parts[3]);
+                        if (p2 > 0 && p2 <= 12 && p3 > 0 && p3 <= 31)
+                        {
+                            year = p1;
+                            month_0idx = p2 - 1;
+                            day = p3;
+                            parsedSuccessfully = true;
+                        }
+                    }
+                }
+
+                if (!parsedSuccessfully)
+                {
+                    const ts = Date.parse(trimmedDateValue);
+                    if (!isNaN(ts))
+                    {
+                        const tempDate = new Date(ts);
+                        year = tempDate.getFullYear();
+                        month_0idx = tempDate.getMonth();
+                        day = tempDate.getDate();
+                        parsedSuccessfully = true;
+                    }
+                }
+
+                if (!parsedSuccessfully)
+                {
+                    return String(dateValue).trim();
+                }
+            } else
+            {
+                return "";
+            }
+
+            if (year === undefined || month_0idx === undefined || day === undefined)
+            {
+                return String(dateValue).trim();
+            }
+
+            const checkDate = new Date(Date.UTC(year, month_0idx, day));
+            if (checkDate.getUTCFullYear() !== year ||
+                checkDate.getUTCMonth() !== month_0idx ||
+                checkDate.getUTCDate() !== day)
+            {
+                return String(dateValue).trim();
+            }
+
+            return `${String(day).padStart(2, '0')}/${String(month_0idx + 1).padStart(2, '0')}/${String(year)}`;
+        }
+
+        function calculatePeriod(dateValue, yearEndMonthNum, dataRowObject, dateHeaderName)
+        {
+            let transactionDate;
+            const formattedDateStr = formatDate_DDMMYYYY(dateValue);
+
+            if (formattedDateStr && formattedDateStr.match(/^\d{2}\/\d{2}\/\d{4}$/))
+            {
+                const parts = formattedDateStr.split('/');
+                transactionDate = new Date(Date.UTC(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])));
+            } else
+            {
+                if (dateValue instanceof Date && !isNaN(dateValue.getTime()))
+                {
+                    transactionDate = new Date(Date.UTC(dateValue.getFullYear(), dateValue.getMonth(), dateValue.getDate()));
+                } else
+                {
+                    console.warn("calculatePeriod: Could not reliably parse date for period calc:", dateValue); return "";
+                }
+            }
+
+            if (!(transactionDate instanceof Date) || isNaN(transactionDate.getTime())) { console.warn("calculatePeriod: Invalid transactionDate object for period calc from:", dateValue); return ""; }
+            const transactionMonth = transactionDate.getUTCMonth() + 1; yearEndMonthNum = parseInt(yearEndMonthNum);
+            let period = transactionMonth - yearEndMonthNum; if (period <= 0) { period += 12; }
+            return period.toString();
+        }
+
+        function generateUniqueReferences(allProcessedData, dateHeaderName)
+        {
+            if (!dateHeaderName) { allProcessedData.forEach(row => row._uniqueReference = "00000000"); return; }
+            const dateCounts = {};
+            allProcessedData.forEach(row =>
+            {
+                const rawDate = row[dateHeaderName];
+                const formattedDateForRef = formatDate_DDMMYYYY(rawDate);
+
+                if (formattedDateForRef && formattedDateForRef.match(/^\d{2}\/\d{2}\/\d{4}$/))
+                {
+                    const parts = formattedDateForRef.split('/');
+                    const d = parseInt(parts[0]);
+                    const m = parseInt(parts[1]);
+
+                    const dayStr = String(d).padStart(2, '0');
+                    const monthStr = String(m).padStart(2, '0');
+                    const datePrefix = `${dayStr}${monthStr}`;
+                    dateCounts[datePrefix] = (dateCounts[datePrefix] || 0) + 1;
+                    row._uniqueReference = `${datePrefix}${String(dateCounts[datePrefix]).padStart(4, '0')}`;
+                } else
+                {
+                    row._uniqueReference = "00000000";
+                }
+            });
+        }
+
+        function generatePastelExportString(dataRowObject, headersToUse, step3YearEndMonthNum, step3CbAccount)
+        {
+            const m1 = `,"`; const n1 = `","`; const o1 = `,`; const p1 = `",`;
+            const getValueByHeaderName = (headerName) =>
+            {
+                return (headerName && dataRowObject[headerName] !== undefined && dataRowObject[headerName] !== null) ? String(dataRowObject[headerName]).trim() : "";
+            };
+
+            const period = dataRowObject._calculatedPeriod || "";
+
+            const dateHeader = headersToUse.find(h => isDateHeader(h));
+            const dateRaw = getValueByHeaderName(dateHeader);
+            const dateFmtd = formatDate_DDMMYYYY(dateRaw);
+
+            const gdcHeader = getGDCHeaderName();
+            const gdc = getValueByHeaderName(gdcHeader);
+
+            let acc = (dataRowObject._account && dataRowObject._account.trim() !== "") ? dataRowObject._account.trim() : "9990000";
+
+            const refHeader = headersToUse.find(h => h.toLowerCase().includes('reference') || h.toLowerCase().includes('ref'));
+            const uniqueRef = dataRowObject._uniqueReference || (getValueByHeaderName(refHeader) || "00000000");
+
+            const descHeader = headersToUse.find(h => h.toLowerCase().includes('description') || h.toLowerCase().includes('narrative'));
+            const desc = getValueByHeaderName(descHeader);
+
+            const amountHeader = getAmountHeaderName();
+            const amtStr = getValueByHeaderName(amountHeader).replace(/,/g, '');
+
+            const taxTypeForPastel = (dataRowObject._taxType && dataRowObject._taxType.trim() !== "") ? dataRowObject._taxType.trim() : "0";
+
+            let vatAmountForPastel = "0.00";
+            const numericVatAmount = parseFloat(dataRowObject._vatAmount);
+            if (!isNaN(numericVatAmount) && numericVatAmount !== 0)
+            {
+                vatAmountForPastel = numericVatAmount.toFixed(2);
+            }
+
+            const colI_value = "";
+
+            const cbAcc = step3CbAccount || (appSettings.cashbookAccount || "8400000");
+
+            const numericAmt = parseFloat(amtStr);
+            const finalAmtForPastel = isNaN(numericAmt) ? "0.00" : numericAmt.toFixed(2);
+
+            let pastelStringPart1 = `${period}${m1}${dateFmtd}${n1}${gdc}${n1}${acc}${n1}${uniqueRef}${n1}${desc}${p1}${finalAmtForPastel}${o1}${taxTypeForPastel}${o1}${vatAmountForPastel}`;
+
+            if (colI_value && colI_value.trim() !== "")
+            {
+                pastelStringPart1 += `${o1}${colI_value}`;
+            }
+
+            const pastelStringPart2 = `${m1} ${n1}    ${n1}${cbAcc}${p1}1${o1}1${o1}0${o1}0${o1}0${o1}${finalAmtForPastel}`;
+
+            return pastelStringPart1 + pastelStringPart2;
+        }
+
+        function processAndDisplayDataWithPeriod()
+        {
+            if (rawImportedData.length === 0 && currentHeaders.length === 0)
+            {
+                displayDataInTable(processedDataTableBody, processedDataTableHead, [], []);
+                return;
+            }
+
+            const step3YearEnd = yearEndForPeriodCalcSelect.value;
+            const step3Cashbook = cashbookAccountForProcessingInput.value.trim();
+            const vatRateStr = vatRateInput.value.trim();
+
+            let vatRatePercentage = 0.0;
+            if (vatRateStr.endsWith('%'))
+            {
+                vatRatePercentage = parseFloat(vatRateStr.substring(0, vatRateStr.length - 1));
+            } else
+            {
+                vatRatePercentage = parseFloat(vatRateStr);
+            }
+
+            if (isNaN(vatRatePercentage) || vatRatePercentage < 0)
+            {
+                console.warn("Invalid VAT rate percentage, defaulting to 0:", vatRateStr);
+                vatRatePercentage = 0.0;
+                vatRateInput.value = "0%";
+            }
+            appSettings.vatRate = vatRatePercentage.toFixed(0) + '%';
+
+
+            let baseDataForProcessing = processedData.length > 0 ? JSON.parse(JSON.stringify(processedData)) : JSON.parse(JSON.stringify(rawImportedData));
+
+            if (baseDataForProcessing.length === 0 && rawImportedData.length > 0)
+            {
+                baseDataForProcessing = JSON.parse(JSON.stringify(rawImportedData));
+            }
+            baseDataForProcessing.forEach(row =>
+            {
+                if (row._account === undefined) row._account = "9990000";
+                if (row._taxType === undefined) row._taxType = "0";
+                if (row._vatAmount === undefined) row._vatAmount = "0.00";
+                if (row._rowNumber === undefined) row._rowNumber = 0;
+            });
+
+
+            const dateHeaderName = currentHeaders.find(h => isDateHeader(h));
+            const amountHeaderName = getAmountHeaderName();
+
+            if (dateHeaderName) { generateUniqueReferences(baseDataForProcessing, dateHeaderName); }
+            else { baseDataForProcessing.forEach(row => row._uniqueReference = "00000000"); }
+
+            const dataWithCalculations = baseDataForProcessing.map(row =>
+            {
+                const newRow = { ...row };
+                newRow._calculatedPeriod = dateHeaderName ? calculatePeriod(newRow[dateHeaderName], step3YearEnd, newRow, dateHeaderName) : "";
+
+                newRow._taxType = newRow._taxType || "0";
+
+                let vatAmount = 0.00;
+                if (amountHeaderName && newRow[amountHeaderName] !== undefined &&
+                    newRow._taxType && newRow._taxType.trim() !== "" && newRow._taxType !== "0" &&
+                    vatRatePercentage > 0)
+                {
+
+                    const totalAmountInclusive = parseFloat(String(newRow[amountHeaderName]).replace(/,/g, '')) || 0;
+                    vatAmount = totalAmountInclusive * (vatRatePercentage / (100 + vatRatePercentage));
+                }
+                newRow._vatAmount = vatAmount.toFixed(2);
+
+                newRow._pastelExportString = generatePastelExportString(newRow, currentHeaders, step3YearEnd, step3Cashbook);
+                return newRow;
+            });
+
+            processedData = dataWithCalculations;
+
+            const displayHeaders = ["Row", "Period", "Unique Ref"];
+            const originalAmountHeader = getAmountHeaderName();
+            const accountColName = "Account";
+            const taxTypeColName = "Tax Type";
+            const vatAmountColName = "VAT Amount";
+
+            let tempOriginalHeaders = [...currentHeaders];
+            let finalDisplayHeadersList = [...displayHeaders];
+
+            let addedAccountCol = false;
+            let addedTaxVatAmountCols = false;
+
+            tempOriginalHeaders.forEach(h =>
+            {
+                if (h.toLowerCase() === "period" || h.toLowerCase() === "unique ref" || h.toLowerCase() === "row") return;
+
+                if (h === getGDCHeaderName())
+                {
+                    finalDisplayHeadersList.push(h);
+                    if (!addedAccountCol)
+                    {
+                        finalDisplayHeadersList.push(accountColName);
+                        addedAccountCol = true;
+                    }
+                } else if (h === originalAmountHeader)
+                {
+                    if (!addedTaxVatAmountCols)
+                    {
+                        finalDisplayHeadersList.push(taxTypeColName, vatAmountColName);
+                        addedTaxVatAmountCols = true;
+                    }
+                    finalDisplayHeadersList.push(h);
+                } else
+                {
+                    finalDisplayHeadersList.push(h);
+                }
+            });
+
+            if (!addedAccountCol)
+            {
+                let insertIdx = finalDisplayHeadersList.length;
+                if (addedTaxVatAmountCols) insertIdx = finalDisplayHeadersList.indexOf(taxTypeColName);
+                else if (originalAmountHeader && finalDisplayHeadersList.includes(originalAmountHeader)) insertIdx = finalDisplayHeadersList.indexOf(originalAmountHeader);
+                finalDisplayHeadersList.splice(insertIdx, 0, accountColName);
+            }
+            if (!addedTaxVatAmountCols && currentHeaders.length > 0)
+            {
+                finalDisplayHeadersList.push(taxTypeColName, vatAmountColName);
+            }
+
+
+            finalDisplayHeadersList.push('_pastelExportString');
+
+            const uniqueDisplayHeaders = [...new Set(finalDisplayHeadersList)];
+
+            const dataForTableDisplay = processedData.map(row =>
+            {
+                const displayRow = {};
+                uniqueDisplayHeaders.forEach(h =>
+                {
+                    if (h === "Row") displayRow[h] = row._rowNumber;
+                    else if (h === "Period") displayRow[h] = row._calculatedPeriod;
+                    else if (h === "Unique Ref") displayRow[h] = row._uniqueReference;
+                    else if (h === "_pastelExportString") displayRow[h] = row._pastelExportString;
+                    else if (h === accountColName) displayRow[h] = row._account || "9990000";
+                    else if (h === taxTypeColName) displayRow[h] = row._taxType;
+                    else if (h === vatAmountColName) displayRow[h] = row._vatAmount;
+                    else if (row.hasOwnProperty(h)) displayRow[h] = row[h];
+                    else displayRow[h] = "";
+                });
+                return displayRow;
+            });
+
+            displayDataInTable(processedDataTableBody, processedDataTableHead, dataForTableDisplay, uniqueDisplayHeaders);
+            saveDataToLocalStorage();
+        }
+
+
+        function saveDataToLocalStorage() { try { localStorage.setItem('hwApp_rawImportedData', JSON.stringify(rawImportedData)); localStorage.setItem('hwApp_currentHeaders', JSON.stringify(currentHeaders)); localStorage.setItem('hwApp_processedData', JSON.stringify(processedData)); localStorage.setItem('hwApp_mappingRules', JSON.stringify(mappingRules)); localStorage.setItem('hwApp_appSettings', JSON.stringify(appSettings)); } catch (e) { console.error("Error saving to local storage:", e); importStatus.textContent = "Error saving data. Local storage might be full."; } }
+        function loadDataFromLocalStorage()
+        {
+            try
+            {
+                const storedRaw = localStorage.getItem('hwApp_rawImportedData'); if (storedRaw) rawImportedData = JSON.parse(storedRaw);
+                const storedHdrs = localStorage.getItem('hwApp_currentHeaders'); if (storedHdrs) currentHeaders = JSON.parse(storedHdrs); else currentHeaders = [];
+                const storedProc = localStorage.getItem('hwApp_processedData');
+                if (storedProc)
+                {
+                    processedData = JSON.parse(storedProc);
+                } else
+                {
+                    processedData = rawImportedData.length > 0 ? JSON.parse(JSON.stringify(rawImportedData)) : [];
+                }
+                const storedRules = localStorage.getItem('hwApp_mappingRules'); if (storedRules) mappingRules = JSON.parse(storedRules);
+                const storedSettings = localStorage.getItem('hwApp_appSettings');
+                if (storedSettings)
+                {
+                    appSettings = JSON.parse(storedSettings);
+                } else
+                {
+                    appSettings = { yearEnd: 'February', cashbookAccount: '', vatRate: '15%' };
+                }
+                vatRateInput.value = appSettings.vatRate || '15%';
+
+
+                displayDataInTable(importedDataTableBody, importedDataTableHead, rawImportedData, currentHeaders);
+                renderMappingRules();
+                yearEndMonthSelect.value = appSettings.yearEnd || 'February'; cashbookAccountInput.value = appSettings.cashbookAccount || '';
+                const step3MonthOpt = Array.from(yearEndForPeriodCalcSelect.options).find(opt => opt.text === appSettings.yearEnd);
+                yearEndForPeriodCalcSelect.value = step3MonthOpt ? step3MonthOpt.value : '2';
+                cashbookAccountForProcessingInput.value = appSettings.cashbookAccount || '';
+                if (rawImportedData.length > 0)
+                {
+                    processAndDisplayDataWithPeriod();
+                } else
+                {
+                    displayDataInTable(processedDataTableBody, processedDataTableHead, [], []);
+                }
+            } catch (e)
+            {
+                console.error("Error loading from local storage:", e);
+                importStatus.textContent = "Error loading saved data. Data might be corrupted.";
+            }
+        }
+        function clearAllLocalData(confirmUser = true)
+        {
+            const doClear = confirmUser ? confirm("Are you sure you want to clear ALL stored data? This cannot be undone.") : true;
+            if (doClear)
+            {
+                localStorage.removeItem('hwApp_rawImportedData');
+                localStorage.removeItem('hwApp_currentHeaders');
+                localStorage.removeItem('hwApp_processedData');
+                localStorage.removeItem('hwApp_mappingRules');
+                localStorage.removeItem('hwApp_appSettings');
+                rawImportedData = []; currentHeaders = []; processedData = []; processedDataBackup = []; mappingRules = [];
+                appSettings = { yearEnd: 'February', cashbookAccount: '', vatRate: '15%' };
+                vatRateInput.value = appSettings.vatRate;
+
+                displayDataInTable(importedDataTableBody, importedDataTableHead, rawImportedData, currentHeaders);
+                const emptyProcessedHeaders = ["Period", "Unique Ref"].concat(currentHeaders).concat(['_pastelExportString']);
+                displayDataInTable(processedDataTableBody, processedDataTableHead, processedData, emptyProcessedHeaders);
+                renderMappingRules();
+                yearEndForPeriodCalcSelect.value = '2'; cashbookAccountForProcessingInput.value = '';
+                yearEndMonthSelect.value = 'February'; cashbookAccountInput.value = '';
+                fileInput.value = '';
+                importStatus.textContent = "All application data has been cleared.";
+                mappingStatus.textContent = ""; settingsStatus.textContent = "";
+                if (confirmUser) alert("All application data has been cleared from your browser.");
+            }
+        }
+
+        importButton.addEventListener('click', function ()
+        {
+            const file = fileInput.files[0]; if (!file) { alert('Please select a file first!'); return; }
+            importStatus.textContent = "Importing...";
+            const reader = new FileReader();
+            reader.onload = function (e)
+            {
+                try
+                {
+                    const data = e.target.result;
+                    const workbook = XLSX.read(data, {
+                        type: 'binary',
+                        cellDates: true,
+                        dateNF: 'dd/mm/yyyy',
+                        codepage: 65001
+                    });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "", rawNumbers: false });
+
+                    if (jsonData.length === 0)
+                    {
+                        currentHeaders = [];
+                        rawImportedData = [];
+                    } else
+                    {
+                        let firstHeaderVal = String(jsonData[0][0] === null || jsonData[0][0] === undefined ? "" : jsonData[0][0]);
+                        if (firstHeaderVal.startsWith('\ufeff'))
+                        {
+                            jsonData[0][0] = firstHeaderVal.substring(1);
+                        }
+                        currentHeaders = jsonData[0].map(h => String(h === null || h === undefined ? "" : h).trim());
+
+                        let importRowCounter = 1;
+                        rawImportedData = jsonData.slice(1).map(rowArray =>
+                        {
+                            const rO = {
+                                _taxType: "0",
+                                _vatAmount: "0.00",
+                                _account: "9990000",
+                                _rowNumber: importRowCounter++
+                            };
+                            currentHeaders.forEach((h, i) =>
+                            {
+                                let cellValue = rowArray[i] === undefined ? "" : rowArray[i];
+                                if (isDateHeader(h))
+                                {
+                                    cellValue = formatDate_DDMMYYYY(cellValue);
+                                }
+                                rO[h] = cellValue;
+                            });
+                            return rO;
+                        });
+                    }
+                    processedData = JSON.parse(JSON.stringify(rawImportedData));
+                    processedDataBackup = [];
+                    displayDataInTable(importedDataTableBody, importedDataTableHead, rawImportedData, currentHeaders);
+                    processAndDisplayDataWithPeriod();
+                    importStatus.textContent = `Successfully imported ${rawImportedData.length} rows.`;
+                    saveDataToLocalStorage();
+                } catch (err)
+                {
+                    console.error("Import Error in reader.onload:", err);
+                    importStatus.textContent = "Error during import processing: " + err.message;
+                    alert("An error occurred during file import: " + err.message + "\nCheck console for more details.");
+                }
+            };
+            reader.onerror = () =>
+            {
+                console.error("FileReader Error:", reader.error);
+                importStatus.textContent = "File could not be read.";
+                alert("An error occurred while trying to read the file.");
+            };
+            try
+            {
+                reader.readAsBinaryString(file);
+            } catch (err)
+            {
+                console.error("Error calling readAsBinaryString:", err);
+                importStatus.textContent = "Error initiating file read: " + err.message;
+                alert("Error initiating file read: " + err.message);
+            }
+        });
+
+        function renderMappingRules() { mappingRulesTableBody.innerHTML = ''; mappingRules.forEach(rule => { const r = mappingRulesTableBody.insertRow(); r.insertCell().textContent = rule.searchText; r.insertCell().textContent = rule.newDescription; r.insertCell().textContent = rule.newGDC; r.insertCell().textContent = rule.newAccount; r.insertCell().textContent = rule.newTaxType; const ac = r.insertCell(); const eb = document.createElement('button'); eb.textContent = 'Edit'; eb.onclick = () => loadRuleForEditing(rule.id); ac.appendChild(eb); const db = document.createElement('button'); db.textContent = 'Delete'; db.style.backgroundColor = '#dc3545'; db.onclick = () => deleteMappingRule(rule.id); ac.appendChild(db); }); }
+        function clearMappingRuleForm() { mappingRuleIdInput.value = ''; searchTextInput.value = ''; newDescriptionInput.value = ''; newGDCInput.value = ''; newAccountInput.value = ''; newTaxTypeInput.value = ''; searchTextInput.focus(); }
+
+        saveMappingRuleButton.addEventListener('click', function () { const id = mappingRuleIdInput.value; const rd = { searchText: searchTextInput.value.trim(), newDescription: newDescriptionInput.value.trim(), newGDC: newGDCInput.value.trim(), newAccount: newAccountInput.value.trim(), newTaxType: newTaxTypeInput.value.trim() }; if (!rd.searchText) { alert("Search Text cannot be empty for a mapping rule."); return; } if (id) { const i = mappingRules.findIndex(r => r.id == id); if (i > -1) mappingRules[i] = { ...mappingRules[i], ...rd }; } else { rd.id = Date.now(); mappingRules.push(rd); } renderMappingRules(); clearMappingRuleForm(); saveDataToLocalStorage(); });
+        clearMappingFormButton.addEventListener('click', clearMappingRuleForm);
+
+        function loadRuleForEditing(id) { const rule = mappingRules.find(r => r.id == id); if (rule) { mappingRuleIdInput.value = rule.id; searchTextInput.value = rule.searchText; newDescriptionInput.value = rule.newDescription; newGDCInput.value = rule.newGDC; newAccountInput.value = rule.newAccount; newTaxTypeInput.value = rule.newTaxType; searchTextInput.focus(); } }
+        function deleteMappingRule(id) { if (confirm("Are you sure you want to delete this mapping rule?")) { mappingRules = mappingRules.filter(r => r.id != id); renderMappingRules(); saveDataToLocalStorage(); } }
+
+        mapLineItemsButton.addEventListener('click', function ()
+        {
+            if (rawImportedData.length === 0) { alert("Please import data before mapping."); return; }
+
+            processedDataBackup = JSON.parse(JSON.stringify(processedData));
+            let currentDataToProcess = JSON.parse(JSON.stringify(rawImportedData));
+            let updatesMadeCount = 0;
+
+            const descHeader = currentHeaders.find(h => h.toLowerCase().includes('description') || h.toLowerCase().includes('narrative'));
+            const gdcHeaderName = getGDCHeaderName();
+            // const accountHeaderOriginal = getAccountHeaderNameOriginal(); // No longer needed for updating original column
+
+
+            currentDataToProcess.forEach(row =>
+            {
+                row._taxType = "0";
+                // _account is initialized at import, mapping rules will update row._account directly
+                const originalDescription = descHeader && row[descHeader] ? String(row[descHeader]).toLowerCase() : '';
+                let ruleAppliedThisRow = false;
+
+                if (descHeader && originalDescription && mappingRules.length > 0)
+                {
+                    for (const rule of mappingRules)
+                    {
+                        const searchTextLower = (rule.searchText || '').toLowerCase();
+                        if (searchTextLower && originalDescription.includes(searchTextLower))
+                        {
+                            if (rule.newDescription) row[descHeader] = rule.newDescription;
+                            if (gdcHeaderName && rule.newGDC) row[gdcHeaderName] = rule.newGDC;
+                            if (rule.newAccount && rule.newAccount.trim() !== "")
+                            {
+                                row._account = rule.newAccount.trim(); // Update internal _account property
+                            }
+                            if (rule.newTaxType && rule.newTaxType.trim() !== "")
+                            {
+                                row._taxType = rule.newTaxType.trim();
+                            }
+                            ruleAppliedThisRow = true;
+                        }
+                    }
+                }
+                if (ruleAppliedThisRow) updatesMadeCount++;
+            });
+
+            processedData = currentDataToProcess;
+            processAndDisplayDataWithPeriod();
+            mappingStatus.textContent = `Mapping complete. ${updatesMadeCount} rows potentially updated by rules. VAT recalculated.`;
+            saveDataToLocalStorage();
+        });
+        undoMappingButton.addEventListener('click', function () { if (processedDataBackup.length > 0) { processedData = JSON.parse(JSON.stringify(processedDataBackup)); processedDataBackup = []; processAndDisplayDataWithPeriod(); mappingStatus.textContent = "Last mapping operation has been undone."; saveDataToLocalStorage(); } else { alert("No previous mapping state to undo."); } });
+        applyProcessingSettingsButton.addEventListener('click', processAndDisplayDataWithPeriod);
+
+        saveSettingsButton.addEventListener('click', function ()
+        {
+            const newCashbookAcc = cashbookAccountInput.value.trim();
+            const newYearEndText = yearEndMonthSelect.value;
+            if (newCashbookAcc && newCashbookAcc.length !== 7) { alert('Global Cashbook Account must be exactly 7 characters long if specified.'); return; }
+            appSettings.yearEnd = newYearEndText;
+            appSettings.cashbookAccount = newCashbookAcc;
+            appSettings.vatRate = vatRateInput.value.trim();
+
+            const step3MonthOption = Array.from(yearEndForPeriodCalcSelect.options).find(opt => opt.text === newYearEndText);
+            if (step3MonthOption) yearEndForPeriodCalcSelect.value = step3MonthOption.value;
+            cashbookAccountForProcessingInput.value = newCashbookAcc;
+            settingsStatus.textContent = "Global settings saved successfully!";
+            saveDataToLocalStorage();
+            processAndDisplayDataWithPeriod();
+            setTimeout(() => settingsStatus.textContent = "", 3000);
+        });
+
+        function createBatch(isPayments)
+        {
+            if (processedData.length === 0) { alert("No processed data available to create a batch."); return; }
+            const amountHeader = getAmountHeaderName();
+            if (!amountHeader) { alert("Error: An 'Amount' or 'Value' header could not be found. Batch creation requires this."); return; }
+
+            let dataForBatch = JSON.parse(JSON.stringify(processedData));
+
+            dataForBatch.sort((a, b) =>
+            {
+                const rowNumA = a._rowNumber || 0;
+                const rowNumB = b._rowNumber || 0;
+                if (rowNumA !== rowNumB)
+                {
+                    return rowNumA - rowNumB;
+                }
+                // This secondary sort will likely not be hit if _rowNumbers are unique
+                const valA_Amount = parseFloat(String(a[amountHeader]).replace(/,/g, '')) || 0;
+                const valB_Amount = parseFloat(String(b[amountHeader]).replace(/,/g, '')) || 0;
+                return isPayments ? (valB_Amount - valA_Amount) : (valA_Amount - valB_Amount);
+            });
+
+            const filteredValues = dataForBatch.filter(row =>
+            {
+                const amountVal = row[amountHeader];
+                const amount = parseFloat(String(amountVal === null || amountVal === undefined ? 0 : amountVal).replace(/,/g, '')) || 0;
+                return isPayments ? amount > 0 : amount < 0;
+            }).map(row => row._pastelExportString || '');
+
+            if (filteredValues.length === 0)
+            {
+                alert(`No ${isPayments ? "payment" : "receipt"} lines found in the processed data matching the criteria.`);
+                return;
+            }
+
+            const batchContent = filteredValues.join("\r\n"); const batchType = isPayments ? "payments" : "receipts";
+            const cbAccountForFilename = cashbookAccountForProcessingInput.value.trim() || appSettings.cashbookAccount || 'NO_CB_ACC';
+            downloadFile(batchContent, `${batchType}_batch_${cbAccountForFilename}_${new Date().toISOString().slice(0, 10)}.txt`);
+            console.log(`${batchType} batch created with ${filteredValues.length} lines.`);
+        }
+        createPaymentsBatchButton.addEventListener('click', () => createBatch(true)); // Step 4 buttons
+        createReceiptsBatchButton.addEventListener('click', () => createBatch(false)); // Step 4 buttons
+        createPaymentsBatchBottomButton.addEventListener('click', () => createBatch(true)); // Step 3 buttons
+        createReceiptsBatchBottomButton.addEventListener('click', () => createBatch(false)); // Step 3 buttons
+
+        // Removed listeners for exportAllDataButton and importAllDataInput
+        clearAllDataButton.addEventListener('click', () => clearAllLocalData(true));
+
+        saveMappingRulesJsonButton.addEventListener('click', function () { if (mappingRules.length === 0) { alert("No mapping rules to save."); return; } downloadFile(JSON.stringify(mappingRules, null, 2), 'hw_app_mapping_rules.json', 'application/json'); });
+
+        loadMappingRulesJsonInput.addEventListener('change', function (event)
+        {
+            const f = event.target.files[0]; if (!f) return;
+            const r = new FileReader();
+            r.onload = function (e)
+            {
+                try
+                {
+                    const lR = JSON.parse(e.target.result);
+                    if (Array.isArray(lR))
+                    {
+                        mappingRules = lR;
+                        renderMappingRules();
+                        saveDataToLocalStorage();
+                        processAndDisplayDataWithPeriod();
+                        alert("Mapping rules loaded successfully!");
+                    } else
+                    {
+                        alert("The selected file does not contain a valid array of mapping rules.");
+                    }
+                } catch (err)
+                {
+                    alert("Error loading mapping rules file: " + err.message);
+                    console.error("Mapping rules load error:", err);
+                } finally
+                {
+                    loadMappingRulesJsonInput.value = '';
+                }
+            };
+            r.readAsText(f);
+        });
+
+        document.addEventListener('DOMContentLoaded', function ()
+        {
+            try
+            {
+                loadDataFromLocalStorage();
+                const tabButtons = document.querySelectorAll('.tab-button');
+                const tabContents = document.querySelectorAll('.tab-content');
+                let activeFound = false;
+
+                tabButtons.forEach((button, index) =>
+                {
+                    if (button.classList.contains('active'))
+                    {
+                        if (tabContents[index])
+                        {
+                            tabContents.forEach(tc => tc.style.display = 'none');
+                            tabContents[index].style.display = 'block';
+                            tabContents[index].classList.add('active');
+                        }
+                        activeFound = true;
+                    }
+                });
+
+                if (!activeFound && tabButtons.length > 0 && tabContents.length > 0)
+                {
+                    tabButtons[0].classList.add('active');
+                    tabContents.forEach(tc => tc.style.display = 'none');
+                    tabContents[0].style.display = 'block';
+                    tabContents[0].classList.add('active');
+                }
+
+                if (rawImportedData.length === 0 && mappingRules.length === 0)
+                {
+                    setTimeout(() =>
+                    {
+                        alert("Welcome to the H&W Data Processing Tool!\n\n- Start by importing an Excel/CSV file in Step 1.\n- Define mapping rules in Step 2.\n- Process data and set calculation parameters in Step 3.\n- Configure global settings and export batches in Step 4.\n\nYour data and rules are saved in your browser's local storage.");
+                    }, 500);
+                }
+            } catch (err)
+            {
+                console.error("Error during DOMContentLoaded:", err);
+                alert("An error occurred while initializing the application. Please check the console for details.");
+            }
+        });
+    </script>
+</body>
+
+</html>
