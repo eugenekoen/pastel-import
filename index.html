@@ -185,7 +185,6 @@
             text-overflow: ellipsis;
         }
 
-
         button {
             padding: 10px 15px;
             background-color: #007bff;
@@ -216,6 +215,15 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
+
+        .inline-label {
+            /* For labels next to inputs */
+            display: inline-block !important;
+            margin-right: 5px;
+            margin-bottom: 0;
+            /* Reset default block margin */
+        }
+
 
         .instructions {
             background-color: #eef;
@@ -306,7 +314,6 @@
         }
 
         .data-management-section {
-            /* Add some top margin if it feels too close to HR */
             margin-top: 20px;
         }
 
@@ -343,6 +350,22 @@
         .settings-for-processing input#vatRateInput {
             width: 80px;
         }
+
+        .filename-input {
+            /* Style for filename inputs */
+            width: 180px !important;
+            /* Override general input style */
+            margin-right: 10px !important;
+            margin-bottom: 0 !important;
+            /* Align with button */
+            vertical-align: middle;
+        }
+
+        .batch-filename-group {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
     </style>
 </head>
 
@@ -353,7 +376,7 @@
             <button class="tab-button active" onclick="openTab(event, 'importTab')">(Step 1) Import File</button>
             <button class="tab-button" onclick="openTab(event, 'mappingRulesTab')">(Step 2) Mapping Rules</button>
             <button class="tab-button" onclick="openTab(event, 'processDataTab')">(Step 3) Process Data</button>
-            <!-- <button class="tab-button" onclick="openTab(event, 'settingsExportTab')">(Step 4) Settings & Export</button>-->
+            <!-- Step 4 Tab Button Removed -->
         </div>
 
         <div id="importTab" class="tab-content active">
@@ -411,9 +434,10 @@
                     <tbody></tbody>
                 </table>
             </div>
-            <!-- MOVED Mapping Rules JSON Management HERE -->
-            <div style="margin-top: 25px;">
+            <div style="margin-top: 25px; display: flex; align-items: center; gap: 10px;">
                 <h4>Manage Mapping Rules (JSON File):</h4>
+                <input type="text" id="mappingRulesFilename" placeholder="rules_filename.json" class="filename-input"
+                    style="width:220px !important;">
                 <button id="saveMappingRulesJsonButton">Save Mapping Rules (JSON)</button>
                 <label for="loadMappingRulesJsonInput" class="button-like-label">Load Mapping Rules (JSON)</label>
                 <input type="file" id="loadMappingRulesJsonInput" accept=".json" style="display:none;">
@@ -461,54 +485,31 @@
                     <tbody></tbody>
                 </table>
             </div>
-            <!-- MOVED Batch Buttons HERE -->
             <div>
                 <h4 style="margin-top: 25px;">Create Batch Files:</h4>
                 <p class="instructions">Uses the data and settings currently displayed above in the "Processed Data"
                     table.</p>
-                <button id="createPaymentsBatchBottomButton">Create Payments Batch</button>
-                <button id="createReceiptsBatchBottomButton">Create Receipts Batch</button>
+                <div class="batch-filename-group">
+                    <label for="paymentsBatchFilenameStep3" class="inline-label">Payments Filename:</label>
+                    <input type="text" id="paymentsBatchFilenameStep3" placeholder="payments_batch.txt"
+                        class="filename-input">
+                    <button id="createPaymentsBatchBottomButton">Create Payments Batch</button>
+                </div>
+                <div class="batch-filename-group">
+                    <label for="receiptsBatchFilenameStep3" class="inline-label">Receipts Filename:</label>
+                    <input type="text" id="receiptsBatchFilenameStep3" placeholder="receipts_batch.txt"
+                        class="filename-input">
+                    <button id="createReceiptsBatchBottomButton">Create Receipts Batch</button>
+                </div>
             </div>
         </div>
 
-        <div id="settingsExportTab" class="tab-content">
-            <h2>(Step 4) - Settings & Batch Export</h2>
-            <div class="instructions">
-                <p>Configure global year-end and Cashbook account for general reference and default batch naming.</p>
-            </div>
-            <div><label class="labelClass" for="yearEndMonth">Global Year-End of Company:</label><select
-                    id="yearEndMonth">
-                    <option value="January">January</option>
-                    <option value="February" selected>February</option>
-                    <option value="March">March</option>
-                    <option value="April">April</option>
-                    <option value="May">May</option>
-                    <option value="June">June</option>
-                    <option value="July">July</option>
-                    <option value="August">August</option>
-                    <option value="September">September</option>
-                    <option value="October">October</option>
-                    <option value="November">November</option>
-                    <option value="December">December</option>
-                </select></div>
-            <div><label class="labelClass" for="cashbookAccount">Global Cashbook Account (7 chars):</label><input
-                    type="text" id="cashbookAccount" maxlength="7" placeholder="e.g., 8400000"></div>
-            <button id="saveSettingsButton">Save Global Settings</button>
-            <p id="settingsStatus"></p>
-            <hr>
-            <h3>Create Batch Files (using Step 3 settings):</h3>
-            <p class="instructions">Batch files use the G/D/C, Account, Tax Type, etc. from the Processed Data table
-                (Step 3). Ensure mappings and VAT calculations are as desired before creating batches from there.</p>
-            <button id="createPaymentsBatchButton">Create Payments Batch (from Step 3 Data)</button>
-            <button id="createReceiptsBatchButton">Create Receipts Batch (from Step 3 Data)</button>
-        </div>
+        <!-- Step 4 Tab Content Removed -->
+        <!-- <div id="settingsExportTab" class="tab-content"> ... </div> -->
 
         <hr>
         <div class="data-management-section">
             <h3>Data Management (Browser Storage)</h3>
-            <!-- Full Application State Section Removed -->
-            <!-- Mapping Rules Only Section Moved to Step 2 Tab -->
-            <!-- Batch File Creation (Convenience) Section Moved to Step 3 Tab -->
             <div>
                 <h4>Clear Storage:</h4><button id="clearAllDataButton" style="background-color: #dc3545;">Clear All App
                     Data</button>
@@ -539,23 +540,24 @@
         const mappingStatus = document.getElementById('mappingStatus');
         const processedDataTableBody = document.getElementById('processedDataTable').getElementsByTagName('tbody')[0];
         const processedDataTableHead = document.getElementById('processedDataTable').getElementsByTagName('thead')[0];
-        const yearEndMonthSelect = document.getElementById('yearEndMonth');
-        const cashbookAccountInput = document.getElementById('cashbookAccount');
-        const saveSettingsButton = document.getElementById('saveSettingsButton');
-        const settingsStatus = document.getElementById('settingsStatus');
 
-        // Batch buttons in Step 4 tab
-        const createPaymentsBatchButton = document.getElementById('createPaymentsBatchButton');
-        const createReceiptsBatchButton = document.getElementById('createReceiptsBatchButton');
+        // const yearEndMonthSelect = document.getElementById('yearEndMonth'); // From removed Step 4
+        // const cashbookAccountInput = document.getElementById('cashbookAccount'); // From removed Step 4
+        // const saveSettingsButton = document.getElementById('saveSettingsButton'); // From removed Step 4
+        // const settingsStatus = document.getElementById('settingsStatus'); // From removed Step 4
 
-        // Batch buttons moved to Step 3 tab (previously "bottom" buttons)
+        // const createPaymentsBatchButton = document.getElementById('createPaymentsBatchButton'); // From removed Step 4
+        // const createReceiptsBatchButton = document.getElementById('createReceiptsBatchButton'); // From removed Step 4
+
         const createPaymentsBatchBottomButton = document.getElementById('createPaymentsBatchBottomButton');
         const createReceiptsBatchBottomButton = document.getElementById('createReceiptsBatchBottomButton');
 
-        // Removed exportAllDataButton and importAllDataInput from const declarations
         const clearAllDataButton = document.getElementById('clearAllDataButton');
         const saveMappingRulesJsonButton = document.getElementById('saveMappingRulesJsonButton');
         const loadMappingRulesJsonInput = document.getElementById('loadMappingRulesJsonInput');
+        const mappingRulesFilenameInput = document.getElementById('mappingRulesFilename');
+        const paymentsBatchFilenameStep3Input = document.getElementById('paymentsBatchFilenameStep3');
+        const receiptsBatchFilenameStep3Input = document.getElementById('receiptsBatchFilenameStep3');
 
         const yearEndForPeriodCalcSelect = document.getElementById('yearEndForPeriodCalc');
         const cashbookAccountForProcessingInput = document.getElementById('cashbookAccountForProcessing');
@@ -589,8 +591,8 @@
                 else if (lowerHeaderText === 'tax type') th.classList.add('col-tax-type');
                 else if (lowerHeaderText === 'vat amount') th.classList.add('col-vat-amount');
                 else if (getAmountHeaderName() && lowerHeaderText === getAmountHeaderName().toLowerCase()) th.classList.add('col-amount');
-                else if (getAccountHeaderNameOriginal() && lowerHeaderText === getAccountHeaderNameOriginal().toLowerCase()) th.classList.add('col-account');
-                else if (lowerHeaderText === 'account' && !getAccountHeaderNameOriginal()) th.classList.add('col-account');
+                else if (getAccountHeaderNameOriginal() && lowerHeaderText === getAccountHeaderNameOriginal().toLowerCase()) th.classList.add('col-account'); // For original Account column
+                else if (lowerHeaderText === 'account' && !getAccountHeaderNameOriginal()) th.classList.add('col-account'); // For our added "Account" column
                 else if (lowerHeaderText === '_pastelexportstring') th.classList.add('col-pastel-export');
                 headerRow.appendChild(th);
             });
@@ -1023,11 +1025,18 @@
                 let insertIdx = finalDisplayHeadersList.length;
                 if (addedTaxVatAmountCols) insertIdx = finalDisplayHeadersList.indexOf(taxTypeColName);
                 else if (originalAmountHeader && finalDisplayHeadersList.includes(originalAmountHeader)) insertIdx = finalDisplayHeadersList.indexOf(originalAmountHeader);
+                else if (finalDisplayHeadersList.includes(getGDCHeaderName())) insertIdx = finalDisplayHeadersList.indexOf(getGDCHeaderName()) + 1;
+
                 finalDisplayHeadersList.splice(insertIdx, 0, accountColName);
             }
             if (!addedTaxVatAmountCols && currentHeaders.length > 0)
             {
-                finalDisplayHeadersList.push(taxTypeColName, vatAmountColName);
+                let insertIdx = finalDisplayHeadersList.length;
+                if (originalAmountHeader && finalDisplayHeadersList.includes(originalAmountHeader)) insertIdx = finalDisplayHeadersList.indexOf(originalAmountHeader);
+                else if (finalDisplayHeadersList.includes(accountColName)) insertIdx = finalDisplayHeadersList.indexOf(accountColName) + 1;
+
+
+                finalDisplayHeadersList.splice(insertIdx, 0, taxTypeColName, vatAmountColName);
             }
 
 
@@ -1087,10 +1096,17 @@
 
                 displayDataInTable(importedDataTableBody, importedDataTableHead, rawImportedData, currentHeaders);
                 renderMappingRules();
-                yearEndMonthSelect.value = appSettings.yearEnd || 'February'; cashbookAccountInput.value = appSettings.cashbookAccount || '';
-                const step3MonthOpt = Array.from(yearEndForPeriodCalcSelect.options).find(opt => opt.text === appSettings.yearEnd);
-                yearEndForPeriodCalcSelect.value = step3MonthOpt ? step3MonthOpt.value : '2';
+                // References to Step 4's yearEndMonthSelect, cashbookAccountInput are removed
+                // They would cause errors if Step 4 tab is removed.
+                // yearEndMonthSelect.value = appSettings.yearEnd || 'February';
+                // cashbookAccountInput.value = appSettings.cashbookAccount || '';
+
+                // Update Step 3's controls directly if needed, or rely on appSettings for defaults
+                const step3YearEndOption = Array.from(yearEndForPeriodCalcSelect.options).find(opt => opt.text.toLowerCase() === (appSettings.yearEnd || 'february').toLowerCase());
+                yearEndForPeriodCalcSelect.value = step3YearEndOption ? step3YearEndOption.value : '2';
                 cashbookAccountForProcessingInput.value = appSettings.cashbookAccount || '';
+
+
                 if (rawImportedData.length > 0)
                 {
                     processAndDisplayDataWithPeriod();
@@ -1123,10 +1139,12 @@
                 displayDataInTable(processedDataTableBody, processedDataTableHead, processedData, emptyProcessedHeaders);
                 renderMappingRules();
                 yearEndForPeriodCalcSelect.value = '2'; cashbookAccountForProcessingInput.value = '';
-                yearEndMonthSelect.value = 'February'; cashbookAccountInput.value = '';
+                // yearEndMonthSelect.value = 'February'; // From removed Step 4
+                // cashbookAccountInput.value = ''; // From removed Step 4
                 fileInput.value = '';
                 importStatus.textContent = "All application data has been cleared.";
-                mappingStatus.textContent = ""; settingsStatus.textContent = "";
+                mappingStatus.textContent = "";
+                // settingsStatus.textContent = ""; // From removed Step 4
                 if (confirmUser) alert("All application data has been cleared from your browser.");
             }
         }
@@ -1228,19 +1246,35 @@
         {
             if (rawImportedData.length === 0) { alert("Please import data before mapping."); return; }
 
-            processedDataBackup = JSON.parse(JSON.stringify(processedData));
+            if (processedData && processedData.length > 0)
+            {
+                processedDataBackup = JSON.parse(JSON.stringify(processedData));
+            } else
+            {
+                // If processedData is empty (e.g., after clear all, before first mapping post-import)
+                // then the "backup" would be the state derived from rawImportedData
+                let initialProcessedState = JSON.parse(JSON.stringify(rawImportedData));
+                initialProcessedState.forEach(row =>
+                { // Ensure internal fields are present for backup
+                    row._account = row._account || "9990000";
+                    row._taxType = row._taxType || "0";
+                    row._vatAmount = row._vatAmount || "0.00"; // Will be recalculated anyway
+                });
+                processedDataBackup = initialProcessedState;
+
+            }
+
             let currentDataToProcess = JSON.parse(JSON.stringify(rawImportedData));
             let updatesMadeCount = 0;
 
             const descHeader = currentHeaders.find(h => h.toLowerCase().includes('description') || h.toLowerCase().includes('narrative'));
             const gdcHeaderName = getGDCHeaderName();
-            // const accountHeaderOriginal = getAccountHeaderNameOriginal(); // No longer needed for updating original column
-
 
             currentDataToProcess.forEach(row =>
             {
-                row._taxType = "0";
-                // _account is initialized at import, mapping rules will update row._account directly
+                row._taxType = "0"; // Reset for current mapping pass
+                row._account = "9990000"; // Reset account to default for current mapping pass
+
                 const originalDescription = descHeader && row[descHeader] ? String(row[descHeader]).toLowerCase() : '';
                 let ruleAppliedThisRow = false;
 
@@ -1255,7 +1289,7 @@
                             if (gdcHeaderName && rule.newGDC) row[gdcHeaderName] = rule.newGDC;
                             if (rule.newAccount && rule.newAccount.trim() !== "")
                             {
-                                row._account = rule.newAccount.trim(); // Update internal _account property
+                                row._account = rule.newAccount.trim();
                             }
                             if (rule.newTaxType && rule.newTaxType.trim() !== "")
                             {
@@ -1273,28 +1307,25 @@
             mappingStatus.textContent = `Mapping complete. ${updatesMadeCount} rows potentially updated by rules. VAT recalculated.`;
             saveDataToLocalStorage();
         });
-        undoMappingButton.addEventListener('click', function () { if (processedDataBackup.length > 0) { processedData = JSON.parse(JSON.stringify(processedDataBackup)); processedDataBackup = []; processAndDisplayDataWithPeriod(); mappingStatus.textContent = "Last mapping operation has been undone."; saveDataToLocalStorage(); } else { alert("No previous mapping state to undo."); } });
+        undoMappingButton.addEventListener('click', function ()
+        {
+            if (processedDataBackup && processedDataBackup.length > 0)
+            {
+                processedData = JSON.parse(JSON.stringify(processedDataBackup));
+                processedDataBackup = [];
+                processAndDisplayDataWithPeriod();
+                mappingStatus.textContent = "Last mapping operation has been undone.";
+                saveDataToLocalStorage();
+            } else
+            {
+                alert("No previous mapping state to undo or already undone.");
+            }
+        });
         applyProcessingSettingsButton.addEventListener('click', processAndDisplayDataWithPeriod);
 
-        saveSettingsButton.addEventListener('click', function ()
-        {
-            const newCashbookAcc = cashbookAccountInput.value.trim();
-            const newYearEndText = yearEndMonthSelect.value;
-            if (newCashbookAcc && newCashbookAcc.length !== 7) { alert('Global Cashbook Account must be exactly 7 characters long if specified.'); return; }
-            appSettings.yearEnd = newYearEndText;
-            appSettings.cashbookAccount = newCashbookAcc;
-            appSettings.vatRate = vatRateInput.value.trim();
+        // saveSettingsButton listener is removed as the button is removed (part of Step 4)
 
-            const step3MonthOption = Array.from(yearEndForPeriodCalcSelect.options).find(opt => opt.text === newYearEndText);
-            if (step3MonthOption) yearEndForPeriodCalcSelect.value = step3MonthOption.value;
-            cashbookAccountForProcessingInput.value = newCashbookAcc;
-            settingsStatus.textContent = "Global settings saved successfully!";
-            saveDataToLocalStorage();
-            processAndDisplayDataWithPeriod();
-            setTimeout(() => settingsStatus.textContent = "", 3000);
-        });
-
-        function createBatch(isPayments)
+        function createBatch(isPayments, suggestedFilename = "")
         {
             if (processedData.length === 0) { alert("No processed data available to create a batch."); return; }
             const amountHeader = getAmountHeaderName();
@@ -1310,7 +1341,6 @@
                 {
                     return rowNumA - rowNumB;
                 }
-                // This secondary sort will likely not be hit if _rowNumbers are unique
                 const valA_Amount = parseFloat(String(a[amountHeader]).replace(/,/g, '')) || 0;
                 const valB_Amount = parseFloat(String(b[amountHeader]).replace(/,/g, '')) || 0;
                 return isPayments ? (valB_Amount - valA_Amount) : (valA_Amount - valB_Amount);
@@ -1329,20 +1359,44 @@
                 return;
             }
 
-            const batchContent = filteredValues.join("\r\n"); const batchType = isPayments ? "payments" : "receipts";
+            const batchContent = filteredValues.join("\r\n");
+            const batchType = isPayments ? "payments" : "receipts";
             const cbAccountForFilename = cashbookAccountForProcessingInput.value.trim() || appSettings.cashbookAccount || 'NO_CB_ACC';
-            downloadFile(batchContent, `${batchType}_batch_${cbAccountForFilename}_${new Date().toISOString().slice(0, 10)}.txt`);
-            console.log(`${batchType} batch created with ${filteredValues.length} lines.`);
-        }
-        createPaymentsBatchButton.addEventListener('click', () => createBatch(true)); // Step 4 buttons
-        createReceiptsBatchButton.addEventListener('click', () => createBatch(false)); // Step 4 buttons
-        createPaymentsBatchBottomButton.addEventListener('click', () => createBatch(true)); // Step 3 buttons
-        createReceiptsBatchBottomButton.addEventListener('click', () => createBatch(false)); // Step 3 buttons
 
-        // Removed listeners for exportAllDataButton and importAllDataInput
+            let finalFilename = suggestedFilename.trim();
+            if (!finalFilename)
+            {
+                finalFilename = `${batchType}_batch_${cbAccountForFilename}_${new Date().toISOString().slice(0, 10)}.txt`;
+            } else if (!finalFilename.toLowerCase().endsWith('.txt'))
+            {
+                finalFilename += '.txt';
+            }
+
+            downloadFile(batchContent, finalFilename);
+            console.log(`${batchType} batch created as ${finalFilename} with ${filteredValues.length} lines.`);
+        }
+        // Listeners for Step 4 buttons are removed as the tab is removed
+        // createPaymentsBatchButton.addEventListener('click', () => createBatch(true, paymentsBatchFilenameStep4Input.value)); 
+        // createReceiptsBatchButton.addEventListener('click', () => createBatch(false, receiptsBatchFilenameStep4Input.value)); 
+
+        createPaymentsBatchBottomButton.addEventListener('click', () => createBatch(true, paymentsBatchFilenameStep3Input.value));
+        createReceiptsBatchBottomButton.addEventListener('click', () => createBatch(false, receiptsBatchFilenameStep3Input.value));
+
         clearAllDataButton.addEventListener('click', () => clearAllLocalData(true));
 
-        saveMappingRulesJsonButton.addEventListener('click', function () { if (mappingRules.length === 0) { alert("No mapping rules to save."); return; } downloadFile(JSON.stringify(mappingRules, null, 2), 'hw_app_mapping_rules.json', 'application/json'); });
+        saveMappingRulesJsonButton.addEventListener('click', function ()
+        {
+            if (mappingRules.length === 0) { alert("No mapping rules to save."); return; }
+            let filename = mappingRulesFilenameInput.value.trim();
+            if (!filename)
+            {
+                filename = 'hw_app_mapping_rules.json';
+            } else if (!filename.toLowerCase().endsWith('.json'))
+            {
+                filename += '.json';
+            }
+            downloadFile(JSON.stringify(mappingRules, null, 2), filename, 'application/json');
+        });
 
         loadMappingRulesJsonInput.addEventListener('change', function (event)
         {
@@ -1381,7 +1435,7 @@
             try
             {
                 loadDataFromLocalStorage();
-                const tabButtons = document.querySelectorAll('.tab-button');
+                const tabButtons = document.querySelectorAll('.tab-nav .tab-button'); // More specific selector
                 const tabContents = document.querySelectorAll('.tab-content');
                 let activeFound = false;
 
@@ -1393,7 +1447,7 @@
                         {
                             tabContents.forEach(tc => tc.style.display = 'none');
                             tabContents[index].style.display = 'block';
-                            tabContents[index].classList.add('active');
+                            tabContents[index].classList.add('active'); // Ensure content also has active class
                         }
                         activeFound = true;
                     }
@@ -1411,7 +1465,7 @@
                 {
                     setTimeout(() =>
                     {
-                        alert("Welcome to the H&W Data Processing Tool!\n\n- Start by importing an Excel/CSV file in Step 1.\n- Define mapping rules in Step 2.\n- Process data and set calculation parameters in Step 3.\n- Configure global settings and export batches in Step 4.\n\nYour data and rules are saved in your browser's local storage.");
+                        alert("Welcome to the H&W Data Processing Tool!\n\n- Start by importing an Excel/CSV file in Step 1.\n- Define mapping rules in Step 2.\n- Process data and set calculation parameters in Step 3.\n\nYour data and rules are saved in your browser's local storage.");
                     }, 500);
                 }
             } catch (err)
