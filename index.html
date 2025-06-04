@@ -91,6 +91,7 @@
             border-collapse: collapse;
             margin-bottom: 15px;
             font-size: 0.9em;
+            /* table-layout: fixed; /* Applied specifically below */
         }
 
         th,
@@ -217,13 +218,10 @@
         }
 
         .inline-label {
-            /* For labels next to inputs */
             display: inline-block !important;
             margin-right: 5px;
             margin-bottom: 0;
-            /* Reset default block margin */
         }
-
 
         .instructions {
             background-color: #eef;
@@ -317,7 +315,6 @@
             margin-top: 20px;
         }
 
-
         .settings-for-processing {
             display: flex;
             flex-wrap: wrap;
@@ -352,12 +349,11 @@
         }
 
         .filename-input {
-            /* Style for filename inputs */
             width: 180px !important;
-            /* Override general input style */
             margin-right: 10px !important;
+            margin-left: 5px;
+            /* Added margin for spacing */
             margin-bottom: 0 !important;
-            /* Align with button */
             vertical-align: middle;
         }
 
@@ -365,13 +361,23 @@
             margin-top: 10px;
             display: flex;
             align-items: center;
+            gap: 5px;
+            /* Space between label, input, button */
+        }
+
+        .rules-filename-group {
+            /* For styling mapping rules filename input and button */
+            margin-top: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>H&W Data Processing Tool</h1>
+        <h1>H&W Process App</h1>
         <div class="tab-nav">
             <button class="tab-button active" onclick="openTab(event, 'importTab')">(Step 1) Import File</button>
             <button class="tab-button" onclick="openTab(event, 'mappingRulesTab')">(Step 2) Mapping Rules</button>
@@ -434,10 +440,10 @@
                     <tbody></tbody>
                 </table>
             </div>
-            <div style="margin-top: 25px; display: flex; align-items: center; gap: 10px;">
+            <div class="rules-filename-group">
                 <h4>Manage Mapping Rules (JSON File):</h4>
-                <input type="text" id="mappingRulesFilename" placeholder="rules_filename.json" class="filename-input"
-                    style="width:220px !important;">
+                <input type="text" id="mappingRulesFilenameInput" placeholder="mapping_rules.json"
+                    class="filename-input">
                 <button id="saveMappingRulesJsonButton">Save Mapping Rules (JSON)</button>
                 <label for="loadMappingRulesJsonInput" class="button-like-label">Load Mapping Rules (JSON)</label>
                 <input type="file" id="loadMappingRulesJsonInput" accept=".json" style="display:none;">
@@ -469,14 +475,14 @@
             </div>
             <hr style="margin: 15px 0;">
             <div class="instructions">
-                <p>Click "Map Line Items" to apply rules from Step 2 (including "New Tax Type"). "Undo" reverts
-                    mapping.<br>
+                <p>Click "Map Line Items" to apply rules from Step 2 (including "New Tax Type"). "Reset to Original
+                    Import" reverts mapping.<br>
                     "Period", "Unique Ref", and "VAT Amount" columns update based on Year-End, Date, data, and VAT
                     Rate.<br>
                     Click "Apply & Recalculate" after changing settings or VAT Rate.</p>
             </div>
             <button id="mapLineItemsButton">Map Line Items</button>
-            <button id="undoMappingButton">Undo Last Mapping</button>
+            <button id="undoMappingButton">Reset to Original Import</button>
             <p id="mappingStatus"></p>
             <h3>Processed Data:</h3>
             <div class="table-container">
@@ -490,14 +496,14 @@
                 <p class="instructions">Uses the data and settings currently displayed above in the "Processed Data"
                     table.</p>
                 <div class="batch-filename-group">
-                    <label for="paymentsBatchFilenameStep3" class="inline-label">Payments Filename:</label>
-                    <input type="text" id="paymentsBatchFilenameStep3" placeholder="payments_batch.txt"
+                    <label for="paymentsBatchFilenameStep3Input" class="inline-label">Payments Filename:</label>
+                    <input type="text" id="paymentsBatchFilenameStep3Input" placeholder="payments_batch.txt"
                         class="filename-input">
                     <button id="createPaymentsBatchBottomButton">Create Payments Batch</button>
                 </div>
                 <div class="batch-filename-group">
-                    <label for="receiptsBatchFilenameStep3" class="inline-label">Receipts Filename:</label>
-                    <input type="text" id="receiptsBatchFilenameStep3" placeholder="receipts_batch.txt"
+                    <label for="receiptsBatchFilenameStep3Input" class="inline-label">Receipts Filename:</label>
+                    <input type="text" id="receiptsBatchFilenameStep3Input" placeholder="receipts_batch.txt"
                         class="filename-input">
                     <button id="createReceiptsBatchBottomButton">Create Receipts Batch</button>
                 </div>
@@ -518,7 +524,7 @@
     </div>
 
     <script>
-        let rawImportedData = [], currentHeaders = [], processedData = [], processedDataBackup = [], mappingRules = [];
+        let rawImportedData = [], currentHeaders = [], processedData = [], /* processedDataBackup = [], */ mappingRules = []; // Removed processedDataBackup
         let appSettings = { yearEnd: 'February', cashbookAccount: '', vatRate: '15%' };
 
         const importButton = document.getElementById('importButton');
@@ -541,23 +547,15 @@
         const processedDataTableBody = document.getElementById('processedDataTable').getElementsByTagName('tbody')[0];
         const processedDataTableHead = document.getElementById('processedDataTable').getElementsByTagName('thead')[0];
 
-        // const yearEndMonthSelect = document.getElementById('yearEndMonth'); // From removed Step 4
-        // const cashbookAccountInput = document.getElementById('cashbookAccount'); // From removed Step 4
-        // const saveSettingsButton = document.getElementById('saveSettingsButton'); // From removed Step 4
-        // const settingsStatus = document.getElementById('settingsStatus'); // From removed Step 4
-
-        // const createPaymentsBatchButton = document.getElementById('createPaymentsBatchButton'); // From removed Step 4
-        // const createReceiptsBatchButton = document.getElementById('createReceiptsBatchButton'); // From removed Step 4
-
         const createPaymentsBatchBottomButton = document.getElementById('createPaymentsBatchBottomButton');
         const createReceiptsBatchBottomButton = document.getElementById('createReceiptsBatchBottomButton');
 
         const clearAllDataButton = document.getElementById('clearAllDataButton');
         const saveMappingRulesJsonButton = document.getElementById('saveMappingRulesJsonButton');
         const loadMappingRulesJsonInput = document.getElementById('loadMappingRulesJsonInput');
-        const mappingRulesFilenameInput = document.getElementById('mappingRulesFilename');
-        const paymentsBatchFilenameStep3Input = document.getElementById('paymentsBatchFilenameStep3');
-        const receiptsBatchFilenameStep3Input = document.getElementById('receiptsBatchFilenameStep3');
+        const mappingRulesFilenameInput = document.getElementById('mappingRulesFilenameInput'); // Corrected ID
+        const paymentsBatchFilenameStep3Input = document.getElementById('paymentsBatchFilenameStep3Input'); // Corrected ID
+        const receiptsBatchFilenameStep3Input = document.getElementById('receiptsBatchFilenameStep3Input'); // Corrected ID
 
         const yearEndForPeriodCalcSelect = document.getElementById('yearEndForPeriodCalc');
         const cashbookAccountForProcessingInput = document.getElementById('cashbookAccountForProcessing');
@@ -591,8 +589,8 @@
                 else if (lowerHeaderText === 'tax type') th.classList.add('col-tax-type');
                 else if (lowerHeaderText === 'vat amount') th.classList.add('col-vat-amount');
                 else if (getAmountHeaderName() && lowerHeaderText === getAmountHeaderName().toLowerCase()) th.classList.add('col-amount');
-                else if (getAccountHeaderNameOriginal() && lowerHeaderText === getAccountHeaderNameOriginal().toLowerCase()) th.classList.add('col-account'); // For original Account column
-                else if (lowerHeaderText === 'account' && !getAccountHeaderNameOriginal()) th.classList.add('col-account'); // For our added "Account" column
+                else if (getAccountHeaderNameOriginal() && lowerHeaderText === getAccountHeaderNameOriginal().toLowerCase()) th.classList.add('col-account');
+                else if (lowerHeaderText === 'account' && !getAccountHeaderNameOriginal()) th.classList.add('col-account');
                 else if (lowerHeaderText === '_pastelexportstring') th.classList.add('col-pastel-export');
                 headerRow.appendChild(th);
             });
@@ -982,50 +980,54 @@
 
             processedData = dataWithCalculations;
 
-            const displayHeaders = ["Row", "Period", "Unique Ref"];
+            const displayHeaders = ["Row", "Period", "Unique Ref"]; // Start with these fixed columns
             const originalAmountHeader = getAmountHeaderName();
             const accountColName = "Account";
             const taxTypeColName = "Tax Type";
             const vatAmountColName = "VAT Amount";
 
-            let tempOriginalHeaders = [...currentHeaders];
-            let finalDisplayHeadersList = [...displayHeaders];
+            let tempOriginalHeaders = [...currentHeaders]; // Copy of original headers from file
+            let finalDisplayHeadersList = [...displayHeaders]; // Start with Row, Period, Ref
 
             let addedAccountCol = false;
             let addedTaxVatAmountCols = false;
 
+            // Iterate through original headers to place them and insert custom ones at specific points
             tempOriginalHeaders.forEach(h =>
             {
-                if (h.toLowerCase() === "period" || h.toLowerCase() === "unique ref" || h.toLowerCase() === "row") return;
+                // Skip if already added (Row, Period, Unique Ref)
+                if (finalDisplayHeadersList.map(dh => dh.toLowerCase()).includes(h.toLowerCase())) return;
 
                 if (h === getGDCHeaderName())
                 {
-                    finalDisplayHeadersList.push(h);
+                    finalDisplayHeadersList.push(h); // Add GDC
                     if (!addedAccountCol)
                     {
-                        finalDisplayHeadersList.push(accountColName);
+                        finalDisplayHeadersList.push(accountColName); // Add our "Account" column
                         addedAccountCol = true;
                     }
                 } else if (h === originalAmountHeader)
                 {
                     if (!addedTaxVatAmountCols)
                     {
-                        finalDisplayHeadersList.push(taxTypeColName, vatAmountColName);
+                        finalDisplayHeadersList.push(taxTypeColName, vatAmountColName); // Add Tax Type, VAT Amount before original Amount
                         addedTaxVatAmountCols = true;
                     }
-                    finalDisplayHeadersList.push(h);
+                    finalDisplayHeadersList.push(h); // Add original Amount
                 } else
                 {
-                    finalDisplayHeadersList.push(h);
+                    finalDisplayHeadersList.push(h); // Add other original headers
                 }
             });
 
+            // Fallbacks if anchor headers (GDC or Amount) weren't found
             if (!addedAccountCol)
             {
-                let insertIdx = finalDisplayHeadersList.length;
+                let insertIdx = finalDisplayHeadersList.length; // Default to end
                 if (addedTaxVatAmountCols) insertIdx = finalDisplayHeadersList.indexOf(taxTypeColName);
                 else if (originalAmountHeader && finalDisplayHeadersList.includes(originalAmountHeader)) insertIdx = finalDisplayHeadersList.indexOf(originalAmountHeader);
                 else if (finalDisplayHeadersList.includes(getGDCHeaderName())) insertIdx = finalDisplayHeadersList.indexOf(getGDCHeaderName()) + 1;
+                else if (finalDisplayHeadersList.includes("Description")) insertIdx = finalDisplayHeadersList.indexOf("Description") + 1; // Common fallback
 
                 finalDisplayHeadersList.splice(insertIdx, 0, accountColName);
             }
@@ -1034,15 +1036,14 @@
                 let insertIdx = finalDisplayHeadersList.length;
                 if (originalAmountHeader && finalDisplayHeadersList.includes(originalAmountHeader)) insertIdx = finalDisplayHeadersList.indexOf(originalAmountHeader);
                 else if (finalDisplayHeadersList.includes(accountColName)) insertIdx = finalDisplayHeadersList.indexOf(accountColName) + 1;
-
+                else if (finalDisplayHeadersList.includes("Description")) insertIdx = finalDisplayHeadersList.indexOf("Description") + 1; // Common fallback
 
                 finalDisplayHeadersList.splice(insertIdx, 0, taxTypeColName, vatAmountColName);
             }
 
-
             finalDisplayHeadersList.push('_pastelExportString');
 
-            const uniqueDisplayHeaders = [...new Set(finalDisplayHeadersList)];
+            const uniqueDisplayHeaders = [...new Set(finalDisplayHeadersList)]; // Ensure no accidental duplicates
 
             const dataForTableDisplay = processedData.map(row =>
             {
@@ -1096,12 +1097,7 @@
 
                 displayDataInTable(importedDataTableBody, importedDataTableHead, rawImportedData, currentHeaders);
                 renderMappingRules();
-                // References to Step 4's yearEndMonthSelect, cashbookAccountInput are removed
-                // They would cause errors if Step 4 tab is removed.
-                // yearEndMonthSelect.value = appSettings.yearEnd || 'February';
-                // cashbookAccountInput.value = appSettings.cashbookAccount || '';
-
-                // Update Step 3's controls directly if needed, or rely on appSettings for defaults
+                // Removed references to Step 4 controls
                 const step3YearEndOption = Array.from(yearEndForPeriodCalcSelect.options).find(opt => opt.text.toLowerCase() === (appSettings.yearEnd || 'february').toLowerCase());
                 yearEndForPeriodCalcSelect.value = step3YearEndOption ? step3YearEndOption.value : '2';
                 cashbookAccountForProcessingInput.value = appSettings.cashbookAccount || '';
@@ -1130,21 +1126,18 @@
                 localStorage.removeItem('hwApp_processedData');
                 localStorage.removeItem('hwApp_mappingRules');
                 localStorage.removeItem('hwApp_appSettings');
-                rawImportedData = []; currentHeaders = []; processedData = []; processedDataBackup = []; mappingRules = [];
+                rawImportedData = []; currentHeaders = []; processedData = []; /* processedDataBackup = []; */ mappingRules = [];
                 appSettings = { yearEnd: 'February', cashbookAccount: '', vatRate: '15%' };
                 vatRateInput.value = appSettings.vatRate;
 
                 displayDataInTable(importedDataTableBody, importedDataTableHead, rawImportedData, currentHeaders);
-                const emptyProcessedHeaders = ["Period", "Unique Ref"].concat(currentHeaders).concat(['_pastelExportString']);
-                displayDataInTable(processedDataTableBody, processedDataTableHead, processedData, emptyProcessedHeaders);
+                const emptyProcessedHeaders = ["Row", "Period", "Unique Ref"].concat(currentHeaders).concat(['Tax Type', 'VAT Amount', '_pastelExportString']); // Add Row for consistency
+                displayDataInTable(processedDataTableBody, processedDataTableHead, [], [...new Set(emptyProcessedHeaders)]); // Ensure unique headers for empty table
                 renderMappingRules();
                 yearEndForPeriodCalcSelect.value = '2'; cashbookAccountForProcessingInput.value = '';
-                // yearEndMonthSelect.value = 'February'; // From removed Step 4
-                // cashbookAccountInput.value = ''; // From removed Step 4
                 fileInput.value = '';
                 importStatus.textContent = "All application data has been cleared.";
                 mappingStatus.textContent = "";
-                // settingsStatus.textContent = ""; // From removed Step 4
                 if (confirmUser) alert("All application data has been cleared from your browser.");
             }
         }
@@ -1204,7 +1197,7 @@
                         });
                     }
                     processedData = JSON.parse(JSON.stringify(rawImportedData));
-                    processedDataBackup = [];
+                    // processedDataBackup = []; // Not strictly needed anymore for this undo model
                     displayDataInTable(importedDataTableBody, importedDataTableHead, rawImportedData, currentHeaders);
                     processAndDisplayDataWithPeriod();
                     importStatus.textContent = `Successfully imported ${rawImportedData.length} rows.`;
@@ -1246,23 +1239,7 @@
         {
             if (rawImportedData.length === 0) { alert("Please import data before mapping."); return; }
 
-            if (processedData && processedData.length > 0)
-            {
-                processedDataBackup = JSON.parse(JSON.stringify(processedData));
-            } else
-            {
-                // If processedData is empty (e.g., after clear all, before first mapping post-import)
-                // then the "backup" would be the state derived from rawImportedData
-                let initialProcessedState = JSON.parse(JSON.stringify(rawImportedData));
-                initialProcessedState.forEach(row =>
-                { // Ensure internal fields are present for backup
-                    row._account = row._account || "9990000";
-                    row._taxType = row._taxType || "0";
-                    row._vatAmount = row._vatAmount || "0.00"; // Will be recalculated anyway
-                });
-                processedDataBackup = initialProcessedState;
-
-            }
+            // No longer need to explicitly manage processedDataBackup for this operation
 
             let currentDataToProcess = JSON.parse(JSON.stringify(rawImportedData));
             let updatesMadeCount = 0;
@@ -1272,8 +1249,8 @@
 
             currentDataToProcess.forEach(row =>
             {
-                row._taxType = "0"; // Reset for current mapping pass
-                row._account = "9990000"; // Reset account to default for current mapping pass
+                row._taxType = "0";
+                row._account = row._account || "9990000"; // Ensure _account exists, use its current value or default
 
                 const originalDescription = descHeader && row[descHeader] ? String(row[descHeader]).toLowerCase() : '';
                 let ruleAppliedThisRow = false;
@@ -1307,23 +1284,29 @@
             mappingStatus.textContent = `Mapping complete. ${updatesMadeCount} rows potentially updated by rules. VAT recalculated.`;
             saveDataToLocalStorage();
         });
+
         undoMappingButton.addEventListener('click', function ()
         {
-            if (processedDataBackup && processedDataBackup.length > 0)
+            if (rawImportedData && rawImportedData.length > 0)
             {
-                processedData = JSON.parse(JSON.stringify(processedDataBackup));
-                processedDataBackup = [];
+                processedData = JSON.parse(JSON.stringify(rawImportedData));
+                processedData.forEach(row =>
+                { // Re-initialize internal fields based on raw state
+                    row._account = row._account || "9990000"; // This ensures _account is present from raw or defaults
+                    row._taxType = "0"; // Reset tax type for a clean slate
+                    row._vatAmount = "0.00"; // Will be recalculated
+                });
                 processAndDisplayDataWithPeriod();
-                mappingStatus.textContent = "Last mapping operation has been undone.";
+                mappingStatus.textContent = "Data has been reset to its original imported state.";
                 saveDataToLocalStorage();
             } else
             {
-                alert("No previous mapping state to undo or already undone.");
+                alert("No imported data to reset to.");
             }
         });
         applyProcessingSettingsButton.addEventListener('click', processAndDisplayDataWithPeriod);
 
-        // saveSettingsButton listener is removed as the button is removed (part of Step 4)
+        // saveSettingsButton listener is removed as Step 4 tab is removed
 
         function createBatch(isPayments, suggestedFilename = "")
         {
@@ -1375,9 +1358,6 @@
             downloadFile(batchContent, finalFilename);
             console.log(`${batchType} batch created as ${finalFilename} with ${filteredValues.length} lines.`);
         }
-        // Listeners for Step 4 buttons are removed as the tab is removed
-        // createPaymentsBatchButton.addEventListener('click', () => createBatch(true, paymentsBatchFilenameStep4Input.value)); 
-        // createReceiptsBatchButton.addEventListener('click', () => createBatch(false, receiptsBatchFilenameStep4Input.value)); 
 
         createPaymentsBatchBottomButton.addEventListener('click', () => createBatch(true, paymentsBatchFilenameStep3Input.value));
         createReceiptsBatchBottomButton.addEventListener('click', () => createBatch(false, receiptsBatchFilenameStep3Input.value));
@@ -1435,7 +1415,7 @@
             try
             {
                 loadDataFromLocalStorage();
-                const tabButtons = document.querySelectorAll('.tab-nav .tab-button'); // More specific selector
+                const tabButtons = document.querySelectorAll('.tab-nav .tab-button');
                 const tabContents = document.querySelectorAll('.tab-content');
                 let activeFound = false;
 
@@ -1447,7 +1427,7 @@
                         {
                             tabContents.forEach(tc => tc.style.display = 'none');
                             tabContents[index].style.display = 'block';
-                            tabContents[index].classList.add('active'); // Ensure content also has active class
+                            tabContents[index].classList.add('active');
                         }
                         activeFound = true;
                     }
