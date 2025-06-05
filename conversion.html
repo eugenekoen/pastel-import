@@ -25,7 +25,8 @@
         }
 
         button,
-        input[type="file"] {
+        input[type="file"],
+        input[type="text"] {
             padding: 10px 15px;
             margin: 10px 5px;
             font-size: 1em;
@@ -44,6 +45,12 @@
             background-color: #0056b3;
         }
 
+        input[type="text"]#convertedFilename {
+            width: 250px;
+            cursor: text;
+        }
+
+        /* Specific styling for filename input */
         p#status {
             margin: 15px 0;
             font-weight: bold;
@@ -89,6 +96,12 @@
         .file-input-container {
             margin-bottom: 15px;
         }
+
+        .conversion-actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 
@@ -112,7 +125,8 @@
                     <li>For Tax Type: "Tax Type", "New Tax Type", "VAT Code", "Tax Code"</li>
                 </ul>
             </li>
-            <li>Select your file, then click "Convert to JSON & Download".</li>
+            <li>Select your file, (optionally) enter a filename for the JSON output, then click "Convert to JSON &
+                Download".</li>
         </ol>
         </p>
 
@@ -120,7 +134,10 @@
             <label for="rulesFileInput"><strong>Upload Old Mapping File (Excel/CSV):</strong></label><br>
             <input type="file" id="rulesFileInput" accept=".xlsx, .xls, .csv">
         </div>
-        <button id="convertButton">Convert to JSON & Download</button>
+        <div class="conversion-actions">
+            <input type="text" id="convertedFilename" placeholder="converted_mapping_rules.json">
+            <button id="convertButton">Convert to JSON & Download</button>
+        </div>
         <p id="status"></p>
 
         <h2>Preview of Converted Data (up to first 5 rules):</h2>
@@ -134,6 +151,7 @@
         const convertButton = document.getElementById('convertButton');
         const statusP = document.getElementById('status');
         const jsonPreview = document.getElementById('jsonPreview');
+        const convertedFilenameInput = document.getElementById('convertedFilename'); // Get the new input field
 
         rulesFileInput.addEventListener('change', handleFileUpload);
         convertButton.addEventListener('click', convertAndDownload);
@@ -195,7 +213,6 @@
         function normalizeHeaderForComparison(header)
         {
             if (typeof header !== 'string') return '';
-            // Convert to lowercase, remove spaces, slashes, dots, and hash symbols
             return header.toLowerCase().replace(/[\s\/\.\#\-\_]/g, '');
         }
 
@@ -209,7 +226,7 @@
                     const normalizedKeyInRow = normalizeHeaderForComparison(keyInRow);
                     if (normalizedPotentialHeaders.includes(normalizedKeyInRow))
                     {
-                        return keyInRow; // Return the original key from the row
+                        return keyInRow;
                     }
                 }
             }
@@ -239,12 +256,11 @@
                     newTaxType: ""
                 };
 
-                // More comprehensive list of potential headers based on your image
                 const searchTextKey = findHeaderKey(row, ["Search for Text", "Search Text", "Search_Text"]);
                 const newDescKey = findHeaderKey(row, ["Desired Description", "New Description", "Description"]);
-                const newGDCKey = findHeaderKey(row, ["G/D/C", "GDC", "G C", "Type"]); // Your image shows "G/D/C"
-                const newAccountKey = findHeaderKey(row, ["Account", "New Account", "A/C No.", "Account No", "New A/C No"]); // Your image shows "Account"
-                const newTaxTypeKey = findHeaderKey(row, ["Tax Type", "New Tax Type", "VAT Code", "Tax Code"]); // Your image shows "Tax Type"
+                const newGDCKey = findHeaderKey(row, ["G/D/C", "GDC", "G C", "Type"]);
+                const newAccountKey = findHeaderKey(row, ["Account", "New Account", "A/C No.", "Account No", "New A/C No"]);
+                const newTaxTypeKey = findHeaderKey(row, ["Tax Type", "New Tax Type", "VAT Code", "Tax Code"]);
 
                 if (searchTextKey) newRule.searchText = String(row[searchTextKey]).trim();
                 if (newDescKey) newRule.newDescription = String(row[newDescKey]).trim();
@@ -267,8 +283,18 @@
             }
 
             const jsonString = JSON.stringify(mappingRulesJson, null, 2);
-            downloadJson(jsonString, "converted_mapping_rules.json");
-            statusP.textContent = `Successfully converted ${mappingRulesJson.length} rules. Downloading JSON file...`;
+
+            let filename = convertedFilenameInput.value.trim();
+            if (!filename)
+            {
+                filename = "converted_mapping_rules.json";
+            } else if (!filename.toLowerCase().endsWith('.json'))
+            {
+                filename += ".json";
+            }
+
+            downloadJson(jsonString, filename);
+            statusP.textContent = `Successfully converted ${mappingRulesJson.length} rules. Downloading as ${filename}...`;
             jsonPreview.textContent = jsonString.substring(0, 3000) + (jsonString.length > 3000 ? "\n\n... (preview truncated)" : "");
         }
 
