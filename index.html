@@ -302,16 +302,17 @@
 
         .button-like-label {
             cursor: pointer;
-            background-color: #6c757d;
+            background-color: #007bff;
             color: white;
             padding: 10px 15px;
             border-radius: 4px;
             display: inline-block;
             margin: 5px 2px;
             font-family: 'Roboto', sans-serif;
-            font-size: inherit;
+            font-size: 13px;
             line-height: normal;
             text-align: center;
+            font-weight: 400;
         }
 
         .button-like-label:hover {
@@ -420,13 +421,13 @@
                 <legend>Add/Edit Mapping Rule</legend>
                 <input type="hidden" id="mappingRuleId">
                 <div class="form-group"><label for="searchText">Search Text:</label><input type="text" id="searchText"
-                        placeholder="e.g., 'Bank Charges'"></div>
+                        placeholder="e.g., Monthly Bank Fees"></div>
                 <div class="form-group"><label for="newDescription">New Description:</label><input type="text"
-                        id="newDescription" placeholder="e.g., 'Monthly Bank Fees'"></div>
+                        id="newDescription" placeholder="e.g., Bank Charges"></div>
                 <div class="form-group"><label for="newGDC">New G/D/C:</label><input type="text" id="newGDC"
                         placeholder="e.g., 'D'"></div>
                 <div class="form-group"><label for="newAccount">New Account:</label><input type="text" id="newAccount"
-                        placeholder="e.g., '6400/001'"></div>
+                        placeholder="e.g., '3200000'"></div>
                 <div class="form-group"><label for="newTaxType">New Tax Type:</label><input type="text" id="newTaxType"
                         placeholder="e.g., '0' or '1'"></div>
                 <div class="form-actions"><button id="saveMappingRuleButton">Save Rule</button><button
