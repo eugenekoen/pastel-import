@@ -91,7 +91,6 @@
             border-collapse: collapse;
             margin-bottom: 15px;
             font-size: 0.9em;
-            /* table-layout: fixed; /* Applied specifically below */
         }
 
         th,
@@ -117,6 +116,7 @@
             overflow: visible;
         }
 
+        /* For Step 1 Imported Data Table - not full width */
         #importTab .table-container table {
             width: auto;
             table-layout: auto;
@@ -132,12 +132,19 @@
             text-overflow: ellipsis;
         }
 
+        #importTab .table-container td.col-amount {
+            /* Amount formatting for imported table */
+            text-align: right;
+        }
+
         #importTab .table-container td:hover {
             white-space: normal;
             overflow: visible;
             max-width: none;
         }
 
+
+        /* For Step 3 Processed Data Table - full width, but with specific column controls */
         #processDataTab .table-container table {
             table-layout: fixed;
             width: 100%;
@@ -148,6 +155,9 @@
             display: none;
         }
 
+        #processDataTab th.col-date,
+        /* Styling for Date column */
+        #processDataTab td.col-date,
         #processDataTab th.col-period,
         #processDataTab td.col-period,
         #processDataTab th.col-unique-ref,
@@ -159,12 +169,13 @@
         #processDataTab th.col-account,
         #processDataTab td.col-account {
             text-align: center;
-            width: 80px;
+            width: 90px;
         }
 
         #processDataTab th.col-description,
         #processDataTab td.col-description {
-            width: 25%;
+            width: 35%;
+            /* Increased width as pastel string is hidden */
             min-width: 150px;
             text-align: left;
         }
@@ -174,17 +185,16 @@
         #processDataTab th.col-vat-amount,
         #processDataTab td.col-vat-amount {
             text-align: right;
-            width: 100px;
+            width: 110px;
+            /* Slightly more width for formatted numbers */
         }
 
         #processDataTab th.col-pastel-export,
         #processDataTab td.col-pastel-export {
-            text-align: left;
-            width: 30%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            display: none;
+            /* Hide this column */
         }
+
 
         button {
             padding: 10px 15px;
@@ -352,7 +362,6 @@
             width: 180px !important;
             margin-right: 10px !important;
             margin-left: 5px;
-            /* Added margin for spacing */
             margin-bottom: 0 !important;
             vertical-align: middle;
         }
@@ -362,11 +371,9 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            /* Space between label, input, button */
         }
 
         .rules-filename-group {
-            /* For styling mapping rules filename input and button */
             margin-top: 25px;
             display: flex;
             align-items: center;
@@ -377,7 +384,7 @@
 
 <body>
     <div class="container">
-        <h1>H&W Process App</h1>
+        <h1>H&W Data Processing Tool</h1>
         <div class="tab-nav">
             <button class="tab-button active" onclick="openTab(event, 'importTab')">(Step 1) Import File</button>
             <button class="tab-button" onclick="openTab(event, 'mappingRulesTab')">(Step 2) Mapping Rules</button>
@@ -511,7 +518,6 @@
         </div>
 
         <!-- Step 4 Tab Content Removed -->
-        <!-- <div id="settingsExportTab" class="tab-content"> ... </div> -->
 
         <hr>
         <div class="data-management-section">
@@ -553,9 +559,9 @@
         const clearAllDataButton = document.getElementById('clearAllDataButton');
         const saveMappingRulesJsonButton = document.getElementById('saveMappingRulesJsonButton');
         const loadMappingRulesJsonInput = document.getElementById('loadMappingRulesJsonInput');
-        const mappingRulesFilenameInput = document.getElementById('mappingRulesFilenameInput'); // Corrected ID
-        const paymentsBatchFilenameStep3Input = document.getElementById('paymentsBatchFilenameStep3Input'); // Corrected ID
-        const receiptsBatchFilenameStep3Input = document.getElementById('receiptsBatchFilenameStep3Input'); // Corrected ID
+        const mappingRulesFilenameInput = document.getElementById('mappingRulesFilenameInput');
+        const paymentsBatchFilenameStep3Input = document.getElementById('paymentsBatchFilenameStep3Input');
+        const receiptsBatchFilenameStep3Input = document.getElementById('receiptsBatchFilenameStep3Input');
 
         const yearEndForPeriodCalcSelect = document.getElementById('yearEndForPeriodCalc');
         const cashbookAccountForProcessingInput = document.getElementById('cashbookAccountForProcessing');
@@ -563,6 +569,17 @@
         const applyProcessingSettingsButton = document.getElementById('applyProcessingSettingsButton');
 
         // --- Utility Functions ---
+        function formatNumberWithCommas(number)
+        {
+            if (number === null || number === undefined || String(number).trim() === "") return ""; // Handle empty or null explicitly
+            const num = parseFloat(String(number).replace(/,/g, '')); // Remove existing commas before parsing
+            if (isNaN(num))
+            {
+                return String(number); // Return original if not a valid number after attempting to clean
+            }
+            return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
         function displayDataInTable(tableBody, tableHead, data, headers)
         {
             tableHead.innerHTML = ''; tableBody.innerHTML = '';
@@ -584,6 +601,7 @@
                 if (lowerHeaderText === 'row') th.classList.add('col-row');
                 else if (lowerHeaderText === 'period') th.classList.add('col-period');
                 else if (lowerHeaderText === 'unique ref') th.classList.add('col-unique-ref');
+                else if (isDateHeader(headerText)) th.classList.add('col-date');
                 else if (lowerHeaderText === 'g/c/s' || (getGDCHeaderName() && lowerHeaderText === getGDCHeaderName().toLowerCase())) th.classList.add('col-gdc');
                 else if (lowerHeaderText.includes('description')) th.classList.add('col-description');
                 else if (lowerHeaderText === 'tax type') th.classList.add('col-tax-type');
@@ -607,26 +625,19 @@
                     if (lowerHeaderKey === 'row') cell.classList.add('col-row');
                     else if (lowerHeaderKey === 'period') cell.classList.add('col-period');
                     else if (lowerHeaderKey === 'unique ref') cell.classList.add('col-unique-ref');
+                    else if (isDateHeader(headerKey)) cell.classList.add('col-date');
                     else if (lowerHeaderKey === 'g/c/s' || (getGDCHeaderName() && lowerHeaderKey === getGDCHeaderName().toLowerCase())) cell.classList.add('col-gdc');
                     else if (lowerHeaderKey.includes('description')) cell.classList.add('col-description');
                     else if (lowerHeaderKey === 'tax type') cell.classList.add('col-tax-type');
                     else if (lowerHeaderKey === 'vat amount')
                     {
                         cell.classList.add('col-vat-amount');
-                        if (typeof cellValue === 'number') cellValue = cellValue.toFixed(2);
-                        else if (typeof cellValue === 'string' && !isNaN(parseFloat(cellValue)))
-                        {
-                            cellValue = parseFloat(cellValue).toFixed(2);
-                        }
+                        cellValue = formatNumberWithCommas(cellValue);
                     }
                     else if (getAmountHeaderName() && lowerHeaderKey === getAmountHeaderName().toLowerCase())
                     {
                         cell.classList.add('col-amount');
-                        if (typeof cellValue === 'number') cellValue = cellValue.toFixed(2);
-                        else if (typeof cellValue === 'string' && !isNaN(parseFloat(cellValue)))
-                        {
-                            cellValue = parseFloat(cellValue).toFixed(2);
-                        }
+                        cellValue = formatNumberWithCommas(cellValue);
                     }
                     else if (getAccountHeaderNameOriginal() && lowerHeaderKey === getAccountHeaderNameOriginal().toLowerCase()) cell.classList.add('col-account');
                     else if (lowerHeaderKey === 'account' && !getAccountHeaderNameOriginal()) cell.classList.add('col-account');
@@ -980,54 +991,52 @@
 
             processedData = dataWithCalculations;
 
-            const displayHeaders = ["Row", "Period", "Unique Ref"]; // Start with these fixed columns
+            const displayHeaders = ["Row", "Period", "Unique Ref"];
             const originalAmountHeader = getAmountHeaderName();
             const accountColName = "Account";
             const taxTypeColName = "Tax Type";
             const vatAmountColName = "VAT Amount";
 
-            let tempOriginalHeaders = [...currentHeaders]; // Copy of original headers from file
-            let finalDisplayHeadersList = [...displayHeaders]; // Start with Row, Period, Ref
+            let tempOriginalHeaders = [...currentHeaders];
+            let finalDisplayHeadersList = [...displayHeaders];
 
             let addedAccountCol = false;
             let addedTaxVatAmountCols = false;
 
-            // Iterate through original headers to place them and insert custom ones at specific points
             tempOriginalHeaders.forEach(h =>
             {
-                // Skip if already added (Row, Period, Unique Ref)
                 if (finalDisplayHeadersList.map(dh => dh.toLowerCase()).includes(h.toLowerCase())) return;
 
                 if (h === getGDCHeaderName())
                 {
-                    finalDisplayHeadersList.push(h); // Add GDC
+                    finalDisplayHeadersList.push(h);
                     if (!addedAccountCol)
                     {
-                        finalDisplayHeadersList.push(accountColName); // Add our "Account" column
+                        finalDisplayHeadersList.push(accountColName);
                         addedAccountCol = true;
                     }
                 } else if (h === originalAmountHeader)
                 {
                     if (!addedTaxVatAmountCols)
                     {
-                        finalDisplayHeadersList.push(taxTypeColName, vatAmountColName); // Add Tax Type, VAT Amount before original Amount
+                        finalDisplayHeadersList.push(taxTypeColName, vatAmountColName);
                         addedTaxVatAmountCols = true;
                     }
-                    finalDisplayHeadersList.push(h); // Add original Amount
+                    finalDisplayHeadersList.push(h);
                 } else
                 {
-                    finalDisplayHeadersList.push(h); // Add other original headers
+                    finalDisplayHeadersList.push(h);
                 }
             });
 
-            // Fallbacks if anchor headers (GDC or Amount) weren't found
             if (!addedAccountCol)
             {
-                let insertIdx = finalDisplayHeadersList.length; // Default to end
+                let insertIdx = finalDisplayHeadersList.length;
                 if (addedTaxVatAmountCols) insertIdx = finalDisplayHeadersList.indexOf(taxTypeColName);
                 else if (originalAmountHeader && finalDisplayHeadersList.includes(originalAmountHeader)) insertIdx = finalDisplayHeadersList.indexOf(originalAmountHeader);
                 else if (finalDisplayHeadersList.includes(getGDCHeaderName())) insertIdx = finalDisplayHeadersList.indexOf(getGDCHeaderName()) + 1;
-                else if (finalDisplayHeadersList.includes("Description")) insertIdx = finalDisplayHeadersList.indexOf("Description") + 1; // Common fallback
+                else if (finalDisplayHeadersList.find(hdr => String(hdr).toLowerCase().includes('description'))) insertIdx = finalDisplayHeadersList.findIndex(hdr => String(hdr).toLowerCase().includes('description')) + 1;
+
 
                 finalDisplayHeadersList.splice(insertIdx, 0, accountColName);
             }
@@ -1036,14 +1045,15 @@
                 let insertIdx = finalDisplayHeadersList.length;
                 if (originalAmountHeader && finalDisplayHeadersList.includes(originalAmountHeader)) insertIdx = finalDisplayHeadersList.indexOf(originalAmountHeader);
                 else if (finalDisplayHeadersList.includes(accountColName)) insertIdx = finalDisplayHeadersList.indexOf(accountColName) + 1;
-                else if (finalDisplayHeadersList.includes("Description")) insertIdx = finalDisplayHeadersList.indexOf("Description") + 1; // Common fallback
+                else if (finalDisplayHeadersList.find(hdr => String(hdr).toLowerCase().includes('description'))) insertIdx = finalDisplayHeadersList.indexOf(finalDisplayHeadersList.find(hdr => String(hdr).toLowerCase().includes('description'))) + 1;
+
 
                 finalDisplayHeadersList.splice(insertIdx, 0, taxTypeColName, vatAmountColName);
             }
 
             finalDisplayHeadersList.push('_pastelExportString');
 
-            const uniqueDisplayHeaders = [...new Set(finalDisplayHeadersList)]; // Ensure no accidental duplicates
+            const uniqueDisplayHeaders = [...new Set(finalDisplayHeadersList)];
 
             const dataForTableDisplay = processedData.map(row =>
             {
@@ -1097,7 +1107,7 @@
 
                 displayDataInTable(importedDataTableBody, importedDataTableHead, rawImportedData, currentHeaders);
                 renderMappingRules();
-                // Removed references to Step 4 controls
+
                 const step3YearEndOption = Array.from(yearEndForPeriodCalcSelect.options).find(opt => opt.text.toLowerCase() === (appSettings.yearEnd || 'february').toLowerCase());
                 yearEndForPeriodCalcSelect.value = step3YearEndOption ? step3YearEndOption.value : '2';
                 cashbookAccountForProcessingInput.value = appSettings.cashbookAccount || '';
@@ -1131,8 +1141,8 @@
                 vatRateInput.value = appSettings.vatRate;
 
                 displayDataInTable(importedDataTableBody, importedDataTableHead, rawImportedData, currentHeaders);
-                const emptyProcessedHeaders = ["Row", "Period", "Unique Ref"].concat(currentHeaders).concat(['Tax Type', 'VAT Amount', '_pastelExportString']); // Add Row for consistency
-                displayDataInTable(processedDataTableBody, processedDataTableHead, [], [...new Set(emptyProcessedHeaders)]); // Ensure unique headers for empty table
+                const emptyProcessedHeaders = ["Row", "Period", "Unique Ref"].concat(currentHeaders).concat(['Tax Type', 'VAT Amount', '_pastelExportString']);
+                displayDataInTable(processedDataTableBody, processedDataTableHead, [], [...new Set(emptyProcessedHeaders)]);
                 renderMappingRules();
                 yearEndForPeriodCalcSelect.value = '2'; cashbookAccountForProcessingInput.value = '';
                 fileInput.value = '';
@@ -1197,7 +1207,7 @@
                         });
                     }
                     processedData = JSON.parse(JSON.stringify(rawImportedData));
-                    // processedDataBackup = []; // Not strictly needed anymore for this undo model
+                    // processedDataBackup = []; 
                     displayDataInTable(importedDataTableBody, importedDataTableHead, rawImportedData, currentHeaders);
                     processAndDisplayDataWithPeriod();
                     importStatus.textContent = `Successfully imported ${rawImportedData.length} rows.`;
@@ -1239,7 +1249,7 @@
         {
             if (rawImportedData.length === 0) { alert("Please import data before mapping."); return; }
 
-            // No longer need to explicitly manage processedDataBackup for this operation
+            // No explicit backup for "undo all mapping", as we revert to rawImportedData
 
             let currentDataToProcess = JSON.parse(JSON.stringify(rawImportedData));
             let updatesMadeCount = 0;
@@ -1249,8 +1259,9 @@
 
             currentDataToProcess.forEach(row =>
             {
+                // Reset fields to their base state before applying rules for this mapping pass
                 row._taxType = "0";
-                row._account = row._account || "9990000"; // Ensure _account exists, use its current value or default
+                row._account = rawImportedData.find(r => r._rowNumber === row._rowNumber)?._account || "9990000"; // Start from original imported account or default
 
                 const originalDescription = descHeader && row[descHeader] ? String(row[descHeader]).toLowerCase() : '';
                 let ruleAppliedThisRow = false;
@@ -1290,11 +1301,12 @@
             if (rawImportedData && rawImportedData.length > 0)
             {
                 processedData = JSON.parse(JSON.stringify(rawImportedData));
+                // Re-initialize derived fields as if it's a fresh import pass
                 processedData.forEach(row =>
-                { // Re-initialize internal fields based on raw state
-                    row._account = row._account || "9990000"; // This ensures _account is present from raw or defaults
-                    row._taxType = "0"; // Reset tax type for a clean slate
-                    row._vatAmount = "0.00"; // Will be recalculated
+                {
+                    row._account = row._account || "9990000"; // Should be set from rawImportedData
+                    row._taxType = "0";
+                    row._vatAmount = "0.00";
                 });
                 processAndDisplayDataWithPeriod();
                 mappingStatus.textContent = "Data has been reset to its original imported state.";
@@ -1306,7 +1318,7 @@
         });
         applyProcessingSettingsButton.addEventListener('click', processAndDisplayDataWithPeriod);
 
-        // saveSettingsButton listener is removed as Step 4 tab is removed
+        // saveSettingsButton and its functionality are removed as Step 4 tab is gone
 
         function createBatch(isPayments, suggestedFilename = "")
         {
