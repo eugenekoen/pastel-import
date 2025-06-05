@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapping Rule Conversion Tool</title>
+    <link rel="icon" href="favicon.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            line-height: 1.6;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: auto;
+        }
+
+        button,
+        input[type="file"] {
+            padding: 10px 15px;
+            margin: 10px 5px;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        p#status {
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        h1,
+        h2 {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .instructions {
+            background-color: #eef;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            border: 1px solid #d1d1e0;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+            margin-top: 5px;
+        }
+
+        .instructions li {
+            margin-bottom: 3px;
+        }
+
+        pre {
+            background-color: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow: auto;
+            font-size: 0.85em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .file-input-container {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Mapping Rule Conversion Tool</h1>
+        <p class="instructions">
+            This tool converts mapping rules from an Excel/CSV file (e.g., exported from a Google Sheet)
+            into the JSON format compatible with the H&W Pastel Processing App.
+        </p>
+        <p class="instructions">
+            <strong>Instructions:</strong>
+        <ol>
+            <li>Ensure your Excel/CSV file has the first row as headers.</li>
+            <li>The tool will look for columns with headers similar to:
+                <ul>
+                    <li>For Search Text: "Search for Text", "Search Text", "Search_Text"</li>
+                    <li>For Desired Description: "Desired Description", "New Description", "Description"</li>
+                    <li>For G/D/C: "G/D/C", "GDC", "G C", "Type"</li>
+                    <li>For Account: "Account", "New Account", "A/C No.", "Account No"</li>
+                    <li>For Tax Type: "Tax Type", "New Tax Type", "VAT Code", "Tax Code"</li>
+                </ul>
+            </li>
+            <li>Select your file, then click "Convert to JSON & Download".</li>
+        </ol>
+        </p>
+
+        <div class="file-input-container">
+            <label for="rulesFileInput"><strong>Upload Old Mapping File (Excel/CSV):</strong></label><br>
+            <input type="file" id="rulesFileInput" accept=".xlsx, .xls, .csv">
+        </div>
+        <button id="convertButton">Convert to JSON & Download</button>
+        <p id="status"></p>
+
+        <h2>Preview of Converted Data (up to first 5 rules):</h2>
+        <pre id="jsonPreview">Awaiting file conversion...</pre>
+    </div>
+
+    <script>
+        let uploadedSheetData = [];
+
+        const rulesFileInput = document.getElementById('rulesFileInput');
+        const convertButton = document.getElementById('convertButton');
+        const statusP = document.getElementById('status');
+        const jsonPreview = document.getElementById('jsonPreview');
+
+        rulesFileInput.addEventListener('change', handleFileUpload);
+        convertButton.addEventListener('click', convertAndDownload);
+
+        function handleFileUpload(event)
+        {
+            const file = event.target.files[0];
+            if (!file)
+            {
+                statusP.textContent = "No file selected.";
+                uploadedSheetData = [];
+                jsonPreview.textContent = "Awaiting file conversion...";
+                return;
+            }
+            statusP.textContent = "Reading file...";
+            uploadedSheetData = [];
+            jsonPreview.textContent = "Processing...";
+
+            const reader = new FileReader();
+            reader.onload = function (e)
+            {
+                try
+                {
+                    const data = e.target.result;
+                    const workbook = XLSX.read(data, { type: 'binary' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const sheetJson = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                    if (sheetJson.length === 0)
+                    {
+                        statusP.textContent = "File is empty or no data found in the first sheet.";
+                        uploadedSheetData = [];
+                        jsonPreview.textContent = "No data found in file.";
+                        return;
+                    }
+                    uploadedSheetData = sheetJson;
+                    statusP.textContent = `File loaded: ${file.name}. Found ${uploadedSheetData.length} potential rules. Ready to convert.`;
+                    previewOriginalData(uploadedSheetData.slice(0, 5));
+                } catch (err)
+                {
+                    console.error("Error reading or parsing file:", err);
+                    statusP.textContent = "Error processing file: " + err.message;
+                    uploadedSheetData = [];
+                    jsonPreview.textContent = "Error processing file.";
+                    alert("Error: Could not process the file. Ensure it's a valid Excel or CSV.\n" + err.message);
+                }
+            };
+            reader.onerror = function ()
+            {
+                statusP.textContent = "Error reading file.";
+                uploadedSheetData = [];
+                jsonPreview.textContent = "Error reading file.";
+                alert("Error: Could not read the file.");
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        function normalizeHeaderForComparison(header)
+        {
+            if (typeof header !== 'string') return '';
+            // Convert to lowercase, remove spaces, slashes, dots, and hash symbols
+            return header.toLowerCase().replace(/[\s\/\.\#\-\_]/g, '');
+        }
+
+        function findHeaderKey(rowObject, potentialHeaders)
+        {
+            const normalizedPotentialHeaders = potentialHeaders.map(h => normalizeHeaderForComparison(h));
+            for (const keyInRow in rowObject)
+            {
+                if (rowObject.hasOwnProperty(keyInRow))
+                {
+                    const normalizedKeyInRow = normalizeHeaderForComparison(keyInRow);
+                    if (normalizedPotentialHeaders.includes(normalizedKeyInRow))
+                    {
+                        return keyInRow; // Return the original key from the row
+                    }
+                }
+            }
+            return null;
+        }
+
+        function convertAndDownload()
+        {
+            if (uploadedSheetData.length === 0)
+            {
+                statusP.textContent = "Please upload a mapping file first.";
+                alert("Please upload a mapping file first.");
+                return;
+            }
+
+            const mappingRulesJson = [];
+            let ruleIdCounter = Date.now();
+
+            uploadedSheetData.forEach((row, index) =>
+            {
+                const newRule = {
+                    id: ruleIdCounter + index,
+                    searchText: "",
+                    newDescription: "",
+                    newGDC: "",
+                    newAccount: "",
+                    newTaxType: ""
+                };
+
+                // More comprehensive list of potential headers based on your image
+                const searchTextKey = findHeaderKey(row, ["Search for Text", "Search Text", "Search_Text"]);
+                const newDescKey = findHeaderKey(row, ["Desired Description", "New Description", "Description"]);
+                const newGDCKey = findHeaderKey(row, ["G/D/C", "GDC", "G C", "Type"]); // Your image shows "G/D/C"
+                const newAccountKey = findHeaderKey(row, ["Account", "New Account", "A/C No.", "Account No", "New A/C No"]); // Your image shows "Account"
+                const newTaxTypeKey = findHeaderKey(row, ["Tax Type", "New Tax Type", "VAT Code", "Tax Code"]); // Your image shows "Tax Type"
+
+                if (searchTextKey) newRule.searchText = String(row[searchTextKey]).trim();
+                if (newDescKey) newRule.newDescription = String(row[newDescKey]).trim();
+                if (newGDCKey) newRule.newGDC = String(row[newGDCKey]).trim();
+                if (newAccountKey) newRule.newAccount = String(row[newAccountKey]).trim();
+                if (newTaxTypeKey) newRule.newTaxType = String(row[newTaxTypeKey]).trim();
+
+                if (newRule.searchText)
+                {
+                    mappingRulesJson.push(newRule);
+                }
+            });
+
+            if (mappingRulesJson.length === 0)
+            {
+                statusP.textContent = "No valid rules could be converted. Ensure a column matching 'Search for Text' (or similar) exists and has values.";
+                alert("No valid rules could be converted. Ensure a column matching 'Search for Text' (or similar) exists and has values.");
+                jsonPreview.textContent = "Conversion resulted in 0 rules.";
+                return;
+            }
+
+            const jsonString = JSON.stringify(mappingRulesJson, null, 2);
+            downloadJson(jsonString, "converted_mapping_rules.json");
+            statusP.textContent = `Successfully converted ${mappingRulesJson.length} rules. Downloading JSON file...`;
+            jsonPreview.textContent = jsonString.substring(0, 3000) + (jsonString.length > 3000 ? "\n\n... (preview truncated)" : "");
+        }
+
+        function previewOriginalData(dataToPreview)
+        {
+            if (!dataToPreview || dataToPreview.length === 0)
+            {
+                jsonPreview.textContent = "No data to preview from uploaded file.";
+                return;
+            }
+            jsonPreview.textContent = "Previewing first " + dataToPreview.length + " rows from uploaded file (raw format):\n\n" + JSON.stringify(dataToPreview, null, 2);
+        }
+
+        function downloadJson(content, filename)
+        {
+            const contentType = 'application/json;charset=utf-8;';
+            const link = document.createElement("a");
+            link.href = `data:${contentType},` + encodeURIComponent(content);
+            link.download = filename;
+            link.style.display = "none";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+
+</html>

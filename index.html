@@ -117,7 +117,6 @@
             overflow: visible;
         }
 
-        /* For Step 1 Imported Data Table - not full width */
         #importTab .table-container table {
             width: auto;
             table-layout: auto;
@@ -134,7 +133,6 @@
         }
 
         #importTab .table-container td.col-amount {
-            /* Amount formatting for imported table */
             text-align: right;
         }
 
@@ -144,8 +142,6 @@
             max-width: none;
         }
 
-
-        /* For Step 3 Processed Data Table - full width, but with specific column controls */
         #processDataTab .table-container table {
             table-layout: fixed;
             width: 100%;
@@ -157,7 +153,6 @@
         }
 
         #processDataTab th.col-date,
-        /* Styling for Date column */
         #processDataTab td.col-date,
         #processDataTab th.col-period,
         #processDataTab td.col-period,
@@ -176,7 +171,6 @@
         #processDataTab th.col-description,
         #processDataTab td.col-description {
             width: 35%;
-            /* Increased width as pastel string is hidden */
             min-width: 150px;
             text-align: left;
         }
@@ -187,13 +181,11 @@
         #processDataTab td.col-vat-amount {
             text-align: right;
             width: 110px;
-            /* Slightly more width for formatted numbers */
         }
 
         #processDataTab th.col-pastel-export,
         #processDataTab td.col-pastel-export {
             display: none;
-            /* Hide this column */
         }
 
 
@@ -303,6 +295,7 @@
         .button-like-label {
             cursor: pointer;
             background-color: #007bff;
+            /* Changed to blue to match buttons */
             color: white;
             padding: 10px 15px;
             border-radius: 4px;
@@ -310,13 +303,16 @@
             margin: 5px 2px;
             font-family: 'Roboto', sans-serif;
             font-size: 13px;
+            /* Match button font size */
             line-height: normal;
             text-align: center;
             font-weight: 400;
+            /* Match button font weight if needed */
         }
 
         .button-like-label:hover {
-            background-color: #5a6268;
+            background-color: #0056b3;
+            /* Match button hover */
         }
 
         .data-management-section div {
@@ -391,7 +387,6 @@
             <button class="tab-button active" onclick="openTab(event, 'importTab')">(Step 1) Import File</button>
             <button class="tab-button" onclick="openTab(event, 'mappingRulesTab')">(Step 2) Mapping Rules</button>
             <button class="tab-button" onclick="openTab(event, 'processDataTab')">(Step 3) Process Data</button>
-            <!-- Step 4 Tab Button Removed -->
         </div>
 
         <div id="importTab" class="tab-content active">
@@ -417,6 +412,10 @@
                 <p>Define rules to transform descriptions and assign G/D/C, Account, Tax Type.</p>
                 <p>The "New Tax Type" you define here will be used to calculate VAT in Step 3.</p>
             </div>
+            <button id="openConversionToolButton"
+                style="margin-bottom: 15px; background-color: #17a2b8; border-color: #17a2b8;">Mapping Conversion Tool
+                (Excel to JSON)</button>
+
             <fieldset id="mappingRuleFormContainer">
                 <legend>Add/Edit Mapping Rule</legend>
                 <input type="hidden" id="mappingRuleId">
@@ -519,7 +518,7 @@
             </div>
         </div>
 
-        <!-- Step 4 Tab Content Removed -->
+        <!-- Step 4 Tab Content (settingsExportTab) is now completely removed -->
 
         <hr>
         <div class="data-management-section">
@@ -569,15 +568,16 @@
         const cashbookAccountForProcessingInput = document.getElementById('cashbookAccountForProcessing');
         const vatRateInput = document.getElementById('vatRateInput');
         const applyProcessingSettingsButton = document.getElementById('applyProcessingSettingsButton');
+        const openConversionToolButton = document.getElementById('openConversionToolButton');
 
         // --- Utility Functions ---
         function formatNumberWithCommas(number)
         {
-            if (number === null || number === undefined || String(number).trim() === "") return ""; // Handle empty or null explicitly
-            const num = parseFloat(String(number).replace(/,/g, '')); // Remove existing commas before parsing
+            if (number === null || number === undefined || String(number).trim() === "") return "";
+            const num = parseFloat(String(number).replace(/,/g, ''));
             if (isNaN(num))
             {
-                return String(number); // Return original if not a valid number after attempting to clean
+                return String(number);
             }
             return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
@@ -1263,7 +1263,9 @@
             {
                 // Reset fields to their base state before applying rules for this mapping pass
                 row._taxType = "0";
-                row._account = rawImportedData.find(r => r._rowNumber === row._rowNumber)?._account || "9990000"; // Start from original imported account or default
+                // Find the original imported row to get its initial _account, or default
+                const originalRow = rawImportedData.find(r => r._rowNumber === row._rowNumber);
+                row._account = originalRow ? (originalRow._account || "9990000") : "9990000";
 
                 const originalDescription = descHeader && row[descHeader] ? String(row[descHeader]).toLowerCase() : '';
                 let ruleAppliedThisRow = false;
@@ -1303,10 +1305,9 @@
             if (rawImportedData && rawImportedData.length > 0)
             {
                 processedData = JSON.parse(JSON.stringify(rawImportedData));
-                // Re-initialize derived fields as if it's a fresh import pass
                 processedData.forEach(row =>
                 {
-                    row._account = row._account || "9990000"; // Should be set from rawImportedData
+                    row._account = row._account || "9990000";
                     row._taxType = "0";
                     row._vatAmount = "0.00";
                 });
@@ -1429,6 +1430,14 @@
             try
             {
                 loadDataFromLocalStorage();
+                if (openConversionToolButton)
+                { // Check if button exists before adding listener
+                    openConversionToolButton.addEventListener('click', function ()
+                    {
+                        window.open('conversion.html', '_blank');
+                    });
+                }
+
                 const tabButtons = document.querySelectorAll('.tab-nav .tab-button');
                 const tabContents = document.querySelectorAll('.tab-content');
                 let activeFound = false;
