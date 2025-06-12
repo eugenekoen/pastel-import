@@ -902,7 +902,7 @@
             const numericVatAmount = parseFloat(dataRowObject._vatAmount);
             if (!isNaN(numericVatAmount) && numericVatAmount !== 0)
             {
-                vatAmountForPastel = Math.abs(numericVatAmount).toFixed(2);
+                vatAmountForPastel = (numericVatAmount * -1).toFixed(2);
             }
 
             const colI_value = "";
@@ -910,7 +910,7 @@
             const cbAcc = step3CbAccount || (appSettings.cashbookAccount || "8400000");
 
             const numericAmt = parseFloat(amtStr);
-            const finalAmtForPastel = isNaN(numericAmt) ? "0.00" : Math.abs(numericAmt).toFixed(2);
+            const finalAmtForPastel = isNaN(numericAmt) ? "0.00" : (numericAmt * -1).toFixed(2);
 
             let pastelStringPart1 = `${period}${m1}${dateFmtd}${n1}${gdc}${n1}${acc}${n1}${uniqueRef}${n1}${desc}${p1}${finalAmtForPastel}${o1}${taxTypeForPastel}${o1}${vatAmountForPastel}`;
 
