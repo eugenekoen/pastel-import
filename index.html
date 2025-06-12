@@ -1354,7 +1354,7 @@
             {
                 const amountVal = row[amountHeader];
                 const amount = parseFloat(String(amountVal === null || amountVal === undefined ? 0 : amountVal).replace(/,/g, '')) || 0;
-                return isPayments ? amount > 0 : amount < 0;
+                return isPayments ? amount < 0 : amount > 0;
             }).map(row => row._pastelExportString || '');
 
             if (filteredValues.length === 0)
